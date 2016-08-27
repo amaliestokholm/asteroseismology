@@ -198,8 +198,9 @@ def make_the_power_spectrum():
     time, flux = loadnpz(ts).T
 
     # Run the fourier transform (cyclic frequencies in µHz)
-    freq, power = pspec.power(time, flux,
-                              minfreq=minfreq, maxfreq=maxfreq)
+    freq, power, alpha, beta = pspec.power_spectrum(time, flux,
+                                                    minfreq=minfreq,
+                                                    maxfreq=maxfreq)
 
     # Convert powers into ppm^2
     power *= 1e12
@@ -805,11 +806,11 @@ def echelle(delta_nu, freq, power):
 
 if __name__ == "__main__":
     # Here the functions are called
-    #make_the_timeseries()
-    #make_the_power_spectrum()
-    #smooth_power_spectrum()
-    #power_density_spectrum()
-    #background(nu_max_guess)
+    make_the_timeseries()
+    make_the_power_spectrum()
+    smooth_power_spectrum()
+    power_density_spectrum()
+    background(nu_max_guess)
     scalingrelation()
     #plot_ps()
     #npzsavetxt(ts, ('%s/timeseries_%s.txt' % (direc, para)))
