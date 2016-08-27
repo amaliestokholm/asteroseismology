@@ -26,15 +26,10 @@ the upper limit should not exceed this frequency for a correct analysis:
                         Nyquist frequency.
 
 Define the constants for the analysis. The constants are:
-    - 'step':           The chosen stepsize for the Fourier analysis.
-                        The standard value is 0.005
     - 'quarter':        Chosen period of time.
     - 'kernelsize':     Mediannumber used for the median filter.
                         NB: this must be an odd number.
     - 'sigma':          the limiting sigma for the sigma-clipping.
-    - 'chunksize':      The chosen chunksize for the Fourier analysis.
-                        '1' for the complete powerseries,
-                        >1 in order to save time, e.g. '10'
     - 'gausssigma':     Standard deviation for Gaussian kernel.
     - 'comparorder':    How many point on each side to use to compare in
                         order to find relative maxima (peaks).
@@ -65,12 +60,10 @@ minfreq = 5
 maxfreq = 8490  # Nyquist for HD181096: 8496 µHz
 
 # Constants for the analysis
-step = 0.005
 quarter = 1
 kernelsize = 801
 sigma = 4
 noisecut = -0.0002
-chunksize = 1
 gausssigma = 70  # FWHM~3*delta_nu, gausssigma = FWHM / 2*sqrt(2*ln(2))
 comparorder = 500
 minheight = 0.75
@@ -78,7 +71,7 @@ nmsigma = 7500
 ac_minheight = 0.15
 ac_comparorder = 700
 dv = 10
-nu_max_guess = 960
+nu_max_guess = 995
 
 # Import the modules
 import os
@@ -131,64 +124,63 @@ if not os.path.exists(direc):
 # Create filenames and abbreviations of filenames
 ts = ('%s/timeseries_%s.npz'
       % (direc, para))
-ps = ('%s/power_%s_c%s.npz'
-      % (direc, para, chunksize))
-pds = ('%s/powerdensity_%s_c%s.npz'
-       % (direc, para, chunksize))
-cps = ('%s/corrected_power_%s_c%s.npz'
-       % (direc, para, chunksize))
-sps = ('%s/smoothpower_%s_c%s_gs%s.npz'
-       % (direc, para, chunksize, gausssigma))
-fp = ('%s/peaks_%s_c%s_gs%s_o%s_mh_%s.npz'
-      % (direc, para, chunksize, gausssigma, comparorder, minheight))
-dn = ('%s/deltanupeaks_%s_c%s_gs%s_o%s_mh_%s.npz'
-      % (direc, para, chunksize, gausssigma, ac_comparorder,
+ps = ('%s/power_%s.npz'
+      % (direc, para))
+pds = ('%s/powerdensity_%s.npz'
+       % (direc, para))
+cps = ('%s/corrected_power_%s.npz'
+       % (direc, para))
+sps = ('%s/smoothpower_%s_gs%s.npz'
+       % (direc, para, gausssigma))
+fp = ('%s/peaks_%s_gs%s_o%s_mh_%s.npz'
+      % (direc, para, gausssigma, comparorder, minheight))
+dn = ('%s/deltanupeaks_%s_gs%s_o%s_mh_%s.npz'
+      % (direc, para, gausssigma, ac_comparorder,
          ac_minheight))
 
 
-# Load compressed data
 def loadnpz(filename):
+    """
+    Load compressed data
+    """
     return np.load(filename)['data']
 
 
-# Save compressed data
 def savenpz(filename, data):
+    """
+    Save compressed data
+    """
     return np.savez(filename, data=data)
 
 
-# Save compressed data as txt
 def npzsavetxt(filename, filename2):
+    """
+    Save compressed data as txt
+    """
     data = loadnpz(filename)
     return np.savetxt(filename2, data)
 
-# Info-print for the start of the analysis
 print('Chosen star: %s' % starname)
 
 
-# Make the timeseries
 def make_the_timeseries():
     print('Read and filter data')
     # Load data from the star
     time, flux = kic.getdata(ID, kernelsize, quarter, sigma, noisecut)
 
     # Calculate and print Nyquist-frequency
-    dt = np.zeros(len(time) - 1)
-    for i in range(len(dt)):
-        j = i + 1
-        dt[i] = time[j] - time[i]
-    nyquist = np.divide(1, 2 * np.median(dt))
+    dt = np.diff(time)
+    nyquist = 1 / (2 * np.median(np.diff(time)))
     print('Nyquist frequency: %s µHz' % str(nyquist))
 
     # Plot the time series
     plt.figure()
     plt.plot(time, flux, 'k.')
-    # plt.title(r'The time series of %s' % starname)
     plt.xlabel(r'Relative time [Ms]')
     plt.ylabel(r'Photometry')
     plt.xlim([np.amin(time), np.amax(time)])
     plots.plot_margins()
     plt.savefig('%s_time.pdf' % (starname))
-    # plt.show()
 
     # Save data in textfile
     print('Write %d entries to %s' % (len(time), ts))
@@ -200,7 +192,6 @@ def make_the_timeseries():
     print('Took %.2f s' % elapsedTime)
 
 
-# Make the power spectrum
 def make_the_power_spectrum():
     print('Calculate power spectrum')
     # Load data from binary file
@@ -229,7 +220,6 @@ def make_the_power_spectrum():
     plt.xlabel(r'Frequency [$\mu$Hz]')
     plt.ylabel(r'Power [ppm$^2$]')
     plt.savefig(r'%s_zoom_ps_%s_%s.pdf' % (starname, minfreq, maxfreq))
-    #plt.show()
 
     # Save data in textfile
     print('Write %d entries to %s' % (len(freq), ps))
@@ -306,13 +296,11 @@ def power_density_spectrum():
     # Plot
     plt.figure()
     plt.plot(freq, powerden, 'k', linewidth=0.1)
-    # plt.title(r'The power density spectrum of %s' % starname)
     plt.xlabel(r'Frequency [$\mu$Hz]')
     plt.ylabel(r'Power density [ppm$^2\, \mu$Hz^{-1}$]')
     plt.xlim([np.amin(freq), np.amax(freq)])
     plots.plot_margins()
     plt.savefig('%s_powerden_%s_%s.pdf' % (starname, minfreq, maxfreq))
-    #plt.show()
 
     # Save data in textfile
     print('Write %d entries to %s' % (len(freq), pds))
@@ -324,7 +312,6 @@ def power_density_spectrum():
     print('Took %.2f s' % elapsedTime)
 
 
-# Background correction
 def background(nu_max):
     print('Corrects for granulation')
     """ This is based on background modelling due to granulation and
@@ -429,7 +416,6 @@ def background(nu_max):
     print('Took %.2f s' % elapsedTime)
 
 
-# Find the peaks in a spectrum
 def find_peaks(freq, power, minheight, comparorder):
     print('Find peaks')
 
@@ -468,6 +454,7 @@ def gaussian_fit(xdata, ydata):
 
 
 def find_numax():
+    # Not used
     """
     This finds nu_max using extreme smoothing. nu_max is the
     position of the top of gaussian envelope of the power spectrum, so
@@ -521,6 +508,10 @@ def find_numax():
 
 def acf(x, nlags, fft=False, norm=True):
     '''
+    This is a modified module of statsmodels.tsa.stattools.acf from
+    http://statsmodels.sourceforge.net/stable/index.html,
+    which is statistical module specific for time series.
+
     Autocorrelation function for 1d arrays.
 
     Parameters
@@ -557,13 +548,8 @@ def acf(x, nlags, fft=False, norm=True):
     return np.real(acf[:nlags + 1])
 
 
-def find_deltanu():
-    """This finds delta_nu using autocorrelation. The autocorrelation
-    is done using module statsmodels.tsa.stattools.acf from
-    http://statsmodels.sourceforge.net/stable/index.html,
-    which is statistical module specific for time series.
-    """
-    print('Find delta_nu')
+def find_deltanu_and_nu_max():
+    print('Find delta_nu and nu_max')
 
     # Load data
     freq, spower = loadnpz(cps).T
@@ -586,6 +572,7 @@ def find_deltanu():
 
     autocorr = loadnpz(dn).reshape(-1, 1)
     # Make an evenly spaced list in order to plot the peaks
+    step = np.mean(np.diff(freq))
     nautocorr = (np.arange(len(autocorr)) * step).reshape(-1, 1)
 
     # Find peaks in the autocorrelated spectrum
@@ -618,15 +605,13 @@ def find_deltanu():
     plt.plot(freqcut, gauss(freqcut, *popt), 'b', linewidth=0.1)
     plt.plot(delta_nu, gauss(delta_nu, *popt), 'r.')
     plt.xlim([np.amin(nautocorr), 1000])
-    # plt.title(r'The autocorrelated spectrum of %s' % starname)
     plt.xlabel(r'Frequency [$\mu$Hz]')
     plt.ylabel(r'Autocorrelated function')
     plt.ylim([0, 0.5])
     plots.plot_margins()
     plt.savefig(r'dn%s_%s_%s.pdf' % (starname, minfreq, maxfreq))
-    #plt.show()
 
-    # Test. Lets try and see if we could use the method in
+    # Find nu_max using the method found in
     # http://arxiv.org/pdf/0910.2764v1.pdf
     cutlimit = 3 * delta_nu
     overlap = 50
@@ -699,7 +684,6 @@ def find_deltanu():
     return delta_nu, nu_max
 
 
-# Calculate the radius of the star from the scaling relation
 def scalingrelation():
     print('Calculates the radius ')
     # Solar values from the literature
@@ -708,17 +692,19 @@ def scalingrelation():
     T_eff_sun = 5777
     s_nu_max_sun = 30
     s_delta_nu_sun = 0.1
+    # From the litterature
     # T_eff = 6347
     # s_teff = 46
+    # From the interferometric analysis
     T_eff = 6211
     s_teff = 91
+    # From half the timeseries
     s_nmax = 21
     s_dn = 0.2
 
     # Find asteroseismic parameters
-    #nu_max = find_numax()
-    delta_nu, nu_max = find_deltanu()
-    print('out')
+    delta_nu, nu_max = find_deltanu_and_nu_max()
+
     # Calculate the radius
     r_nu_max = (nu_max / nu_max_sun)
     r_delta_nu = (delta_nu / delta_nu_sun)
@@ -827,4 +813,4 @@ if __name__ == "__main__":
     scalingrelation()
     #plot_ps()
     #npzsavetxt(ts, ('%s/timeseries_%s.txt' % (direc, para)))
-    #npzsavetxt(ps, ('%s/power_%s_c%s.txt' % (direc, para, chunksize)))
+    #npzsavetxt(ps, ('%s/power_%s.txt' % (direc, para)))
