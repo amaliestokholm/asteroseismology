@@ -89,7 +89,6 @@ from scipy.optimize import curve_fit
 from time import time as now
 import matplotlib
 
-
 def matplotlib_setup():
     """ The setup, which makes nice plots for the report"""
     fig_width_pt = 328
@@ -110,6 +109,9 @@ def matplotlib_setup():
 
 matplotlib_setup()
 import matplotlib.pyplot as plt
+
+from mpl_toolkits.mplot3d import Axes3D
+
 import plots
 from statsmodels.tsa.stattools import acf
 
@@ -586,7 +588,52 @@ def find_deltanu():
 
     # Test. Lets try and see if we could use the method in http://arxiv.org/pdf/0910.2764v1.pdf
     cutlimit = 4 * delta_nu
-
+    overlap = 50
+    startlist = np.arange(freq[0], freq[-1] - cutlimit, cutlimit - overlap)
+    # Discard last subsection for which we don't have enough. 
+    #startlist = startlist[:-1]
+    freqlist = []
+    spacinglist = []
+    clist = []
+    df = freq[1] - freq[0]
+    assert np.allclose(np.diff(freq), df)
+    for start in startlist:
+        stop = start + cutlimit
+        #  start = i * df + freq[0]. Solve for i: 
+        i = int((start - freq[0]) / df)
+        # stop = j * df + freq[0]
+        j = int((stop - freq[0]) / df)
+        chunk = spower[i:j]
+        print(start,stop,i,j,len(spower),freq[0],freq[-1])
+        assert len(chunk) == j - i
+        freqchunk = freq[i:j]
+        # chunk = chunk - np.mean(chunk)  # Already done in acf
+        corr = acf(chunk, nlags=len(chunk)-1, fft=True)
+        assert len(corr) == len(chunk)
+        assert len(corr) == j - i
+        cf = (stop + start) / 2
+        treshold = sorted(corr)[-10]
+        filt = corr > treshold
+        freqlist.extend((np.zeros(j - i) + cf)[filt])
+        spacinglist.extend((np.arange(j - i) * df)[filt])
+        clist.extend(corr[filt])
+        
+    freqlist = np.asarray(freqlist)
+    spacinglist = np.asarray(spacinglist)
+    clist = np.asarray(clist)
+    print(freqlist)
+    fig = plt.figure()
+    plt.scatter(freqlist, spacinglist, c=clist, cmap='gray')
+    plt.show()
+    """
+    fig = plt.figure()
+    ax = Axes3D(fig)
+    ax.set_zlabel(r'Correlation')
+    Pmesh, phimesh = np.meshgrid(cf, spacing)
+    ax.plot_surface(Pmesh, phimesh, a, rstride=10, cstride=10,
+                    color='c', linewidth=0.01, antialiased=False)
+    plt.show()
+    """
     return delta_nu
 
 
@@ -607,7 +654,7 @@ def scalingrelation():
     s_dn = 0.2
 
     # Find asteroseismic parameters
-    nu_max = find_numax()
+    #nu_max = find_numax()
     delta_nu = find_deltanu()
 
     # Calculate the radius
