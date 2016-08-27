@@ -113,7 +113,7 @@ import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 
 import plots
-from statsmodels.tsa.stattools import acf
+# from statsmodels.tsa.stattools import acf
 
 import kicdata as kic
 import ts_powerspectrum as pspec
@@ -518,6 +518,44 @@ def find_numax():
     return nu_max
 
 
+def acf(x, nlags, fft=False, norm=True):
+    '''
+    Autocorrelation function for 1d arrays.
+
+    Parameters
+    ----------
+    x : array
+       Time series data
+    nlags: int, optional
+        Number of lags to return autocorrelation for.
+
+    Returns
+    -------
+    acf : array
+        autocorrelation function
+
+    Notes
+    -----
+    The acf at lag 0 (ie., 1) is returned.
+    '''
+    assert fft
+    from statsmodels.compat.scipy import _next_regular
+
+    nobs = len(x)
+    d = nobs  # changes if unbiased
+    x = np.squeeze(np.asarray(x))
+    #JP: move to acovf
+    x0 = x - x.mean()
+    # ensure that we always use a power of 2 or 3 for zero-padding,
+    # this way we'll ensure O(n log n) runtime of the fft.
+    n = _next_regular(2 * nobs + 1)
+    Frf = np.fft.fft(x0, n=n)  # zero-pad for separability
+    acf = np.fft.ifft(Frf * np.conjugate(Frf))[:nobs] / d
+    if norm:
+        acf /= acf[0]
+    return np.real(acf[:nlags + 1])
+
+
 def find_deltanu():
     """This finds delta_nu using autocorrelation. The autocorrelation
     is done using module statsmodels.tsa.stattools.acf from
@@ -608,23 +646,25 @@ def find_deltanu():
         assert len(chunk) == j - i
         freqchunk = freq[i:j]
         # chunk = chunk - np.mean(chunk)  # Already done in acf
-        corr = acf(chunk, nlags=len(chunk)-1, fft=True)
+        corr = acf(chunk, nlags=len(chunk)-1, fft=True, norm=False)
         assert len(corr) == len(chunk)
         assert len(corr) == j - i
         cf = (stop + start) / 2
-        treshold = sorted(corr)[-10]
-        filt = corr > treshold
-        freqlist.extend((np.zeros(j - i) + cf)[filt])
-        spacinglist.extend((np.arange(j - i) * df)[filt])
-        clist.extend(corr[filt])
-        
-    freqlist = np.asarray(freqlist)
-    spacinglist = np.asarray(spacinglist)
-    clist = np.asarray(clist)
-    print(freqlist)
+        freqlist.append((np.zeros(j - i) + cf))
+        spacinglist.append((np.arange(j - i) * df))
+        clist.append(corr)
+
+    minlen = min(len(c) for c in clist)
+    freqlist = np.asarray([l[:minlen] for l in freqlist])
+    spacinglist = np.asarray([s[:minlen] for s in spacinglist])
+    clist = np.asarray([c[:minlen] for c in clist])
     fig = plt.figure()
-    plt.scatter(freqlist, spacinglist, c=clist, cmap='gray')
+    plt.imshow(clist.T, cmap='gray', interpolation='bilinear',
+               origin='lower', aspect='auto',
+               extent=[freqlist[0,0], freqlist[-1, 0], 0, spacinglist[0,-1]])
     plt.show()
+    
+    
     """
     fig = plt.figure()
     ax = Axes3D(fig)
