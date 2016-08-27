@@ -89,6 +89,7 @@ from scipy.optimize import curve_fit
 from time import time as now
 import matplotlib
 
+
 def matplotlib_setup():
     """ The setup, which makes nice plots for the report"""
     fig_width_pt = 328
@@ -606,7 +607,8 @@ def find_deltanu():
     popt = gaussian_fit(freqcut, heightcut)
     delta_nu = popt[1]
     pm_dn = popt[2]
-    print('Fitted delta_nu = %.2f \N{PLUS-MINUS SIGN} %.2f' % (delta_nu, pm_dn))
+    print('Fitted delta_nu = %.2f \N{PLUS-MINUS SIGN} %.2f'
+          % (delta_nu, pm_dn))
 
     # Plot autocorrelated spectrum
     plt.figure()
@@ -624,11 +626,12 @@ def find_deltanu():
     plt.savefig(r'dn%s_%s_%s.pdf' % (starname, minfreq, maxfreq))
     #plt.show()
 
-    # Test. Lets try and see if we could use the method in http://arxiv.org/pdf/0910.2764v1.pdf
-    cutlimit = 4 * delta_nu
+    # Test. Lets try and see if we could use the method in
+    # http://arxiv.org/pdf/0910.2764v1.pdf
+    cutlimit = 3 * delta_nu
     overlap = 50
     startlist = np.arange(freq[0], freq[-1] - cutlimit, cutlimit - overlap)
-    # Discard last subsection for which we don't have enough. 
+    # Discard last subsection for which we don't have enough.
     #startlist = startlist[:-1]
     freqlist = []
     spacinglist = []
@@ -637,12 +640,11 @@ def find_deltanu():
     assert np.allclose(np.diff(freq), df)
     for start in startlist:
         stop = start + cutlimit
-        #  start = i * df + freq[0]. Solve for i: 
+        #  start = i * df + freq[0]. Solve for i:
         i = int((start - freq[0]) / df)
         # stop = j * df + freq[0]
         j = int((stop - freq[0]) / df)
         chunk = spower[i:j]
-        print(start,stop,i,j,len(spower),freq[0],freq[-1])
         assert len(chunk) == j - i
         freqchunk = freq[i:j]
         # chunk = chunk - np.mean(chunk)  # Already done in acf
@@ -659,22 +661,32 @@ def find_deltanu():
     spacinglist = np.asarray([s[:minlen] for s in spacinglist])
     clist = np.asarray([c[:minlen] for c in clist])
     fig = plt.figure()
-    plt.imshow(clist.T, cmap='gray', interpolation='bilinear',
+    plt.xlabel(r'Central frequency [$\mu$Hz]')
+    plt.ylabel(r'Spacing [$\mu$Hz]')
+    plt.xlim([freqlist[0, 0], freqlist[-1, 0]])
+    plt.imshow(-clist.T, cmap='gray', interpolation='bilinear',
                origin='lower', aspect='auto',
-               extent=[freqlist[0,0], freqlist[-1, 0], 0, spacinglist[0,-1]])
-    
+               extent=[freqlist[0, 0], freqlist[-1, 0], 0, spacinglist[0, -1]])
+    plt.savefig(r'%s_numax_huber_2_%s_%s.pdf' % (starname,
+                cutlimit, overlap))
+
     # Collapse the ACF
     collacf = np.sum(clist, axis=1)
-    popt = gaussian_fit(freqlist[0:200, 0], collacf[0:200])
+    xs = np.linspace(freqlist[0, 0], freqlist[-1, 0], 1000)
+    popt = gaussian_fit(freqlist[:, 0], collacf)
     nu_max = popt[1]
     print(nu_max)
 
     fig = plt.figure()
+    plt.xlabel(r'Central frequency [$\mu$Hz]')
+    plt.ylabel(r'Collapsed ACF [Arbitary Units]')
+    plt.xlim([freqlist[0, 0], freqlist[-1, 0]])
     plt.plot(freqlist[:, 0], collacf, 'k')
-    plt.plot(freqlist[0:200, 0], gauss(freqlist[0:200, 0], *popt), 'b')
+    plt.plot(xs, gauss(xs, *popt), 'b')
+    plt.savefig(r'%s_numax_huber_3_%s_%s.pdf' % (starname,
+                cutlimit, overlap))
     plt.show()
 
-    
     """
     fig = plt.figure()
     ax = Axes3D(fig)
@@ -684,7 +696,7 @@ def find_deltanu():
                     color='c', linewidth=0.01, antialiased=False)
     plt.show()
     """
-    return delta_nu
+    return delta_nu, nu_max
 
 
 # Calculate the radius of the star from the scaling relation
@@ -705,8 +717,8 @@ def scalingrelation():
 
     # Find asteroseismic parameters
     #nu_max = find_numax()
-    delta_nu = find_deltanu()
-
+    delta_nu, nu_max = find_deltanu()
+    print('out')
     # Calculate the radius
     r_nu_max = (nu_max / nu_max_sun)
     r_delta_nu = (delta_nu / delta_nu_sun)
