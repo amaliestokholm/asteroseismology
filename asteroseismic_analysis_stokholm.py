@@ -459,8 +459,8 @@ def gauss(x, A, mean, sigma, y0):
 
 def gaussian_fit(xdata, ydata):
     a = np.amax(ydata)
-    mean = np.mean(xdata)
-    sigma = np.std(ydata)
+    mean = xdata[np.argmax(ydata)]
+    sigma = np.std(xdata)
     y0 = np.amin(ydata)
     popt, pcov = curve_fit(gauss, xdata, ydata, p0=[a, mean, sigma, y0])
     return popt
@@ -604,9 +604,9 @@ def find_deltanu():
     heightcut = autocorr[delta_nu_filt]
 
     popt = gaussian_fit(freqcut, heightcut)
-    delta_nu = np.around(popt[1])
+    delta_nu = popt[1]
     pm_dn = popt[2]
-    print('Fitted delta_nu = %.2f pm %.2f' % (delta_nu, pm_dn))
+    print('Fitted delta_nu = %.2f \N{PLUS-MINUS SIGN} %.2f' % (delta_nu, pm_dn))
 
     # Plot autocorrelated spectrum
     plt.figure()
@@ -662,8 +662,18 @@ def find_deltanu():
     plt.imshow(clist.T, cmap='gray', interpolation='bilinear',
                origin='lower', aspect='auto',
                extent=[freqlist[0,0], freqlist[-1, 0], 0, spacinglist[0,-1]])
-    plt.show()
     
+    # Collapse the ACF
+    collacf = np.sum(clist, axis=1)
+    popt = gaussian_fit(freqlist[0:200, 0], collacf[0:200])
+    nu_max = popt[1]
+    print(nu_max)
+
+    fig = plt.figure()
+    plt.plot(freqlist[:, 0], collacf, 'k')
+    plt.plot(freqlist[0:200, 0], gauss(freqlist[0:200, 0], *popt), 'b')
+    plt.show()
+
     
     """
     fig = plt.figure()
