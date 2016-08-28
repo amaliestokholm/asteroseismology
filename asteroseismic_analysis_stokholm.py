@@ -56,7 +56,7 @@ starname = 'HD181096'
 ID = '181096'
 
 # Define the frequency interval in cyclic frequencies (f=1/P).
-minfreq = 5
+minfreq = 7
 maxfreq = 8490  # Nyquist for HD181096: 8496 µHz
 
 # Constants for the analysis
@@ -71,7 +71,7 @@ nmsigma = 7500
 ac_minheight = 0.15
 ac_comparorder = 700
 dv = 10
-nu_max_guess = 995
+nu_max_guess = 960
 
 # Import the modules
 import os
@@ -107,7 +107,6 @@ import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 
 import plots
-# from statsmodels.tsa.stattools import acf
 
 import kicdata as kic
 import ts_powerspectrum as pspec
@@ -249,7 +248,6 @@ def smooth_power_spectrum():
     # Plot the smoothened power spectrum
     plt.figure()
     plt.plot(freq, smooth_data, 'r-', linewidth=0.1)
-    # plt.title(r'The smoothened power spectrum of %s' % starname)
     plt.xlabel(r'Frequency [$\mu$Hz]')
     plt.ylabel(r'Power [ppm$^2$]')
     plt.xlim([np.amin(freq), np.amax(freq)])
@@ -418,13 +416,13 @@ def background(nu_max):
 
 
 def find_peaks(freq, power, minheight, comparorder):
-    print('Find peaks')
+    print('Find peaks with minheight %s and comparorder %s' % (minheight, comparorder))
 
     # Find relative maxima using scipy.signal.argrelmax
     point = scipy.signal.argrelmax(power, order=comparorder)
     if len(point[0]) == 0:
         raise Exception("No maxima found")
-
+    print(len(point[0]))
     # Find location and height of peaks
     peak = freq[point]
     height = power[point]
@@ -432,6 +430,7 @@ def find_peaks(freq, power, minheight, comparorder):
     # Only peaks over a given height 'minheight' should be included
     included_peak = peak[height > minheight]
     included_height = height[height > minheight]
+    print(len(peak), len(included_peak))
 
     if len(included_peak) == 0:
         raise Exception(
@@ -560,7 +559,7 @@ def find_deltanu_and_nu_max():
     if not os.path.exists(dn):
         print('Run autocorrelation')
         # Run autocorrelation, the argument has to be a np-array.
-        corr = acf(spower, nlags=lags)
+        corr = acf(spower, nlags=lags, fft=True)
 
         # Write data to textfile
         print('Write %d entries to %s' % (len(corr), dn))

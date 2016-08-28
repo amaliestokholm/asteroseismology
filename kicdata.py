@@ -159,7 +159,6 @@ def getdata(ID, kernelsize, quarter, sigma, noisecut):
              color='k', marker='.', ms=1, linestyle='None')
     plt.plot(totaltime_noise, totalflux_noise,
              color='k', marker='.', ms=1, linestyle='None')
-    # plt.title(r'The time series of HD %s' % ID)
     plt.xlabel(r'Relative time [Ms]')
     plt.ylabel(r'Relative photometry')
     plt.xlim([np.amin(totaldatatime), np.amax(totaldatatime)])
@@ -168,6 +167,5 @@ def getdata(ID, kernelsize, quarter, sigma, noisecut):
     plt.gca().yaxis.get_major_formatter().set_powerlimits((0, 0), )
     plots.plot_margins()
     plt.savefig('rawdata.pdf')
-    plt.show()
 
     return (totaldatatime, totaldataflux)

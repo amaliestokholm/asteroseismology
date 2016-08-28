@@ -24,28 +24,25 @@ def matplotlib_setup():
 matplotlib_setup()
 import matplotlib.pyplot as plt
 # Make an Échelle diagram
-def echelle(delta_nu):
+def echelle(starname, delta_nu):
     print('Plot Échelle diagram')
     dir = './X072495_y02638_nor_4_495_595'
     datafiles = sorted([s for s in os.listdir(dir)])
     for datafile in datafiles:
         path = os.path.join(dir, datafile)
         n, l, f, a = np.loadtxt(path, usecols=(0,1,2,3)).T
-    
-    """
+        delta_nu = f[1] - f[0]
+        print(delta_nu, f[2] - f[1])
     plt.figure()
-    plt.scatter(peakmod, peak, c=height, cmap='gray')
-    #plt.plot(np.mod(timpeak, delta_nu), timpeak, 'bo')
     plt.plot(np.mod(f, delta_nu), f, 'ro')
-    #plt.plot(np.mod(amaliepeak, delta_nu), amaliepeak,  'ro')
     plt.title(r'The Echelle diagram of %s with $\Delta\nu=$%s' %
               (starname, delta_nu))
     plt.xlabel(r'Frequency mod $\Delta\nu$ [$\mu$Hz]')
     plt.ylabel(r'Frequency [$\mu$Hz]')
     plt.xlim([0, delta_nu])
-    plt.savefig('%s_echelle_%s_%s.pdf' % (starname, minfreq, maxfreq))
+    # plt.savefig('%s_echelle_%s_%s.pdf' % (starname, minfreq, maxfreq))
     plt.show()
     return peak, height
-    """
 
-echelle(53.7)
+
+echelle('HD181096', 53.7)
