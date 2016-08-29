@@ -2,7 +2,7 @@ import os
 import numpy as np
 import matplotlib
 
-
+# ej
 def matplotlib_setup():
     """ The setup, which makes nice plots for the report"""
     fig_width_pt = 328
