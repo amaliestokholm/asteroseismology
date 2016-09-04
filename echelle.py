@@ -2,7 +2,7 @@ import os
 import numpy as np
 import matplotlib
 
-# ej
+
 def matplotlib_setup():
     """ The setup, which makes nice plots for the report"""
     fig_width_pt = 328
@@ -23,26 +23,30 @@ def matplotlib_setup():
 
 matplotlib_setup()
 import matplotlib.pyplot as plt
+
+
 # Make an Échelle diagram
-def echelle(starname, delta_nu):
+def echelle(starname, minfreq, maxfreq):
     print('Plot Échelle diagram')
     dir = './X072495_y02638_nor_4_495_595'
     datafiles = sorted([s for s in os.listdir(dir)])
-    for datafile in datafiles:
+    for i, datafile in enumerate(datafiles):
         path = os.path.join(dir, datafile)
-        n, l, f, a = np.loadtxt(path, usecols=(0,1,2,3)).T
-        delta_nu = f[1] - f[0]
-        print(delta_nu, f[2] - f[1])
-    plt.figure()
-    plt.plot(np.mod(f, delta_nu), f, 'ro')
-    plt.title(r'The Echelle diagram of %s with $\Delta\nu=$%s' %
-              (starname, delta_nu))
-    plt.xlabel(r'Frequency mod $\Delta\nu$ [$\mu$Hz]')
-    plt.ylabel(r'Frequency [$\mu$Hz]')
-    plt.xlim([0, delta_nu])
-    # plt.savefig('%s_echelle_%s_%s.pdf' % (starname, minfreq, maxfreq))
-    plt.show()
-    return peak, height
+        l, n, f, a = np.loadtxt(path, usecols=(0, 1, 2, 3)).T
+        plt.figure()
+        delta_nu = np.median(np.diff(f[n == 0]))
+        plt.subplots_adjust(left=0.12, right=0.95, bottom=0.12, top=0.90)
+        plt.plot(np.mod(f[l == 0], delta_nu), f[l == 0], 'bo')
+        plt.plot(np.mod(f[l == 1], delta_nu), f[l == 1], 'go')
+        plt.plot(np.mod(f[l == 2], delta_nu), f[l == 2], 'yo')
+        plt.plot(np.mod(f[l == 3], delta_nu), f[l == 3], 'mo')
+        plt.title(r'The Echelle diagram of %s with $\Delta\nu=$%s' %
+                  (starname, delta_nu))
+        plt.xlabel(r'Frequency mod $\Delta\nu$ [$\mu$Hz]')
+        plt.ylabel(r'Frequency [$\mu$Hz]')
+        plt.xlim([0, delta_nu])
+        plt.savefig('./echelle/%s_echelle_%s_%s_%s.pdf' % (starname, i,
+                                                           minfreq, maxfreq))
 
 
-echelle('HD181096', 53.7)
+echelle('HD181096', 495, 595)

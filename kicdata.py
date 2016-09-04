@@ -128,6 +128,7 @@ def getdata(ID, kernelsize, quarter, sigma, noisecut):
 
     # Plot the raw data
     plt.figure()
+
     """ 
     The next step replaces datapoints in the most dense areas of the
     time series with a filled figure. This is only done in order to

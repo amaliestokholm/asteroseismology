@@ -35,7 +35,7 @@ import matplotlib.pyplot as plt
 
 
 def power_spectrum(time, amplitude, weight=None, minfreq=None, maxfreq=None,
-                   oversample=None, memory_use=None):
+                   oversample=None, memory_use=None, freq=None):
     """
     This function returns the power spectrum of the desired star.
     Arguments:
@@ -46,6 +46,7 @@ def power_spectrum(time, amplitude, weight=None, minfreq=None, maxfreq=None,
         - 'maxfreq': The upper bound for the frequency interval
         - 'oversample': The resolution of the power spectrum.
         - 'memory_use': The amount of memory used for this calculation.
+        - 'freq': Override minfreq, maxfreq, ... and use these frequencies instead.
     """
     # The default longest wavelength is the length of the time series.
     if minfreq is None:
@@ -65,9 +66,13 @@ def power_spectrum(time, amplitude, weight=None, minfreq=None, maxfreq=None,
         weight = np.asarray(weight)
         assert weight.shape == amplitude.shape
 
-    # Generate cyclic frequencies
-    step = 1 / (oversample * (time[-1] - time[0]))
-    freq = np.arange(minfreq, maxfreq, step)
+    if freq is None:
+        # Generate cyclic frequencies
+        step = 1 / (oversample * (time[-1] - time[0]))
+        freq = np.arange(minfreq, maxfreq, step)
+    print("Computing power spectrum for frequencies " +
+          "[%g, %g] with step %g" %
+          (freq.min(), freq.max(), np.median(np.diff(freq))))
 
     # Generate list to store the calculated power
     alpha = np.zeros((len(freq),))
@@ -1206,6 +1211,7 @@ def phasefold(time, flux, dT, P, phi):
     #fig.savefig('sol_4.pdf')
     plt.show()
 
+    """
 if __name__ == "__main__":
     filename = 'KEP02.txt'
 
@@ -1215,7 +1221,6 @@ if __name__ == "__main__":
     phi = np.linspace(1, 10, res)  # By eye: 0.2
     #matchfilter(filename, dT, P, phi, res)
     autocorr(filename)
-    """
     dT = 0.01/2  # np.linspace(0.01-0.001, 0.01-0.001, 5)
     P = np.linspace(0.38-0.2, 0.38+0.2, 500)  # By eye: 0.38
     phi = np.linspace(0.01, 0.3, 500)  # By eye: 0.2

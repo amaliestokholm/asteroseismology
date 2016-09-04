@@ -56,7 +56,7 @@ starname = 'HD181096'
 ID = '181096'
 
 # Define the frequency interval in cyclic frequencies (f=1/P).
-minfreq = 7
+minfreq = 5
 maxfreq = 8490  # Nyquist for HD181096: 8496 µHz
 
 # Constants for the analysis
@@ -72,6 +72,11 @@ ac_minheight = 0.15
 ac_comparorder = 700
 dv = 10
 nu_max_guess = 960
+
+frequencies_from = None and (
+    '/home/amalie/Dropbox/Uddannelse/UNI/1516 - fysik 3. år/' +
+    'Bachelorprojekt/asteroseismology/data/181096/' +
+    'min5_max8490/powerdensity_q1_s4_k801_c1.npz')
 
 # Import the modules
 import os
@@ -103,13 +108,11 @@ def matplotlib_setup():
 
 matplotlib_setup()
 import matplotlib.pyplot as plt
-
-from mpl_toolkits.mplot3d import Axes3D
-
 import plots
 
 import kicdata as kic
 import ts_powerspectrum as pspec
+import powerspectrum as psp
 
 # Make cryptic abbreviations
 minmax = 'min%s_max%s' % (minfreq, maxfreq)
@@ -169,7 +172,7 @@ def make_the_timeseries():
 
     # Calculate and print Nyquist-frequency
     dt = np.diff(time)
-    nyquist = 1 / (2 * np.median(np.diff(time)))
+    nyquist = 1 / (2 * np.median(dt))
     print('Nyquist frequency: %s µHz' % str(nyquist))
 
     # Plot the time series
@@ -197,28 +200,42 @@ def make_the_power_spectrum():
     time, flux = loadnpz(ts).T
 
     # Run the fourier transform (cyclic frequencies in µHz)
-    freq, power, alpha, beta = pspec.power_spectrum(time, flux,
-                                                    minfreq=minfreq,
-                                                    maxfreq=maxfreq)
+    if frequencies_from is not None:
+        old_freq = np.load(frequencies_from)['data'][:, 0]
+        old_step = np.median(np.diff(old_freq))
+        print("Using frequencies from old data. " +
+              "Min %g max %g " % (old_freq.min(), old_freq.max()) +
+              "step %g" % old_step)
+        freq = old_freq[(minfreq <= old_freq) & (old_freq <= maxfreq)]
+        freq, power, alpha, beta = pspec.power_spectrum(
+            time, flux, freq=freq)
+    else:
+        oversample = 37.395163336441328  # Step size 0.005
+        freq, power, alpha, beta = pspec.power_spectrum(
+            time, flux, oversample=oversample,
+            memory_use=500000 * 10,
+            minfreq=minfreq, maxfreq=maxfreq)
 
     # Convert powers into ppm^2
     power *= 1e12
 
     # Plot the power spectrum
     plt.figure()
-    plt.plot(freq, power, 'k')
+    plt.plot(freq, power, 'k', linewidth=0.1)
     plt.title(r'The power spectrum of %s' % starname)
     plt.xlabel(r'Frequency [$\mu$Hz]')
     plt.ylabel(r'Power [ppm$^2$]')
     plt.xlim([np.amin(freq), np.amax(freq)])
+    plots.plot_margins()
     plt.savefig('%s_power_%s_%s.pdf' % (starname, minfreq, maxfreq))
 
     plt.figure()
-    plt.plot(freq, power, 'k', linewidth=0.25)
+    plt.plot(freq, power, 'k', linewidth=0.1)
     plt.xlim([np.amin(freq), 5000])
     plt.title(r'The power spectrum of %s' % starname)
     plt.xlabel(r'Frequency [$\mu$Hz]')
     plt.ylabel(r'Power [ppm$^2$]')
+    plots.plot_margins()
     plt.savefig(r'%s_zoom_ps_%s_%s.pdf' % (starname, minfreq, maxfreq))
 
     # Save data in textfile
@@ -251,18 +268,16 @@ def smooth_power_spectrum():
     plt.xlabel(r'Frequency [$\mu$Hz]')
     plt.ylabel(r'Power [ppm$^2$]')
     plt.xlim([np.amin(freq), np.amax(freq)])
-    plt.ylim([0, 10])
     plots.plot_margins()
     plt.savefig(r'%s_smoothenpower_%s_%s.pdf' % (starname, minfreq,
                 maxfreq))
 
     plt.figure()
-    plt.plot(freq, smooth_data, 'k', linewidth=0.25)
+    plt.plot(freq, smooth_data, 'k', linewidth=0.1)
     # plt.title(r'The smoothened power spectrum of %s' % starname)
     plt.xlabel(r'Frequency [$\mu$Hz]')
     plt.ylabel(r'Power [ppm$^2$]')
     plt.xlim([np.amin(freq), 2000])
-    plt.ylim([0, 10])
     plots.plot_margins()
     plt.savefig(r'%s_smoothenpower_zoom_%s_%s.pdf' % (starname,
                                                       minfreq, maxfreq))
@@ -288,7 +303,7 @@ def power_density_spectrum():
     where L is the length of the time series. """
 
     # Change the amplitude by multiplying the PS with L in seconds
-    L = time[-1]
+    L = time[-1] - time[0]
     print('The length of the time series is %s Ms' % L)
     powerden = power * L
 
@@ -390,7 +405,7 @@ def background(nu_max):
     time, flux = loadnpz(ts).T
 
     # Change the amplitude by dividing the PDS with L
-    L = time[-1]
+    L = time[-1] - time[0]
     print('The length of the time series is %s Ms' % L)
     corr_power = corr_powerden / L
 
@@ -805,12 +820,12 @@ def echelle(delta_nu, freq, power):
 
 if __name__ == "__main__":
     # Here the functions are called
-    make_the_timeseries()
+    #make_the_timeseries()
     make_the_power_spectrum()
-    smooth_power_spectrum()
-    power_density_spectrum()
-    background(nu_max_guess)
-    scalingrelation()
+    #smooth_power_spectrum()
+    #power_density_spectrum()
+    #background(nu_max_guess)
+    #scalingrelation()
     #plot_ps()
     #npzsavetxt(ts, ('%s/timeseries_%s.txt' % (direc, para)))
     #npzsavetxt(ps, ('%s/power_%s.txt' % (direc, para)))
