@@ -26,27 +26,56 @@ import matplotlib.pyplot as plt
 
 
 # Make an Échelle diagram
-def echelle(starname, minfreq, maxfreq):
+def echelle(starname, background=1):
     print('Plot Échelle diagram')
-    dir = './X072495_y02638_nor_4_495_595'
-    datafiles = sorted([s for s in os.listdir(dir)])
+    dir = './X072669_Y02628_no'
+    freq, power = np.loadtxt('181096.txt').T
+
+    # Compute resolution and make dnu a multiple of the resolution
+    fres = (freq[-1] - freq[0]) / (len(freq)-1)
+
+    datafiles = sorted([s for s in os.listdir(dir) if s.startswith('obs')])
     for i, datafile in enumerate(datafiles):
         path = os.path.join(dir, datafile)
-        l, n, f, a = np.loadtxt(path, usecols=(0, 1, 2, 3)).T
         plt.figure()
-        delta_nu = np.median(np.diff(f[n == 0]))
+        l, n, f, a = np.loadtxt(path, usecols=(0, 1, 2, 3)).T
+        print(path)
+        delta_nu = np.median(np.diff(f[l == 0]))
+        if background is not None:
+            dnu = delta_nu
+            numax = (dnu / 0.263) ** (1 / 0.772)
+            nmax = np.round(numax // dnu) -1
+            nx = int(np.round(dnu / fres))
+            dnu = nx * fres
+            ny = int(np.floor(len(power) / nx))
+            print(np.amax(power))
+            # nmax = np.argmax(power * (500 <= freq) * (freq <= 1500)) // nx
+            numax = (dnu/0.263) ** (1/0.772)
+            
+            startorder = 0
+            endorder = nmax + 5
+
+            start = startorder * nx
+            endo = endorder * nx
+
+            apower = power[start:endo]
+            pixeldata = np.reshape(apower, (-1, nx))
+            plt.imshow(-pixeldata, aspect='auto', cmap='gray',
+                        interpolation='gaussian', origin='lower',
+                        extent=(0, dnu, start * fres, endo * fres))
         plt.subplots_adjust(left=0.12, right=0.95, bottom=0.12, top=0.90)
         plt.plot(np.mod(f[l == 0], delta_nu), f[l == 0], 'bo')
         plt.plot(np.mod(f[l == 1], delta_nu), f[l == 1], 'go')
         plt.plot(np.mod(f[l == 2], delta_nu), f[l == 2], 'yo')
-        plt.plot(np.mod(f[l == 3], delta_nu), f[l == 3], 'mo')
+        #plt.plot(np.mod(f[l == 3], delta_nu), f[l == 3], 'mo')
         plt.title(r'The Echelle diagram of %s with $\Delta\nu=$%s' %
                   (starname, delta_nu))
-        plt.xlabel(r'Frequency mod $\Delta\nu$ [$\mu$Hz]')
+        plt.xlabel(r'Frequency mod $\Delta\nu$ $\mu$Hz]')
         plt.ylabel(r'Frequency [$\mu$Hz]')
         plt.xlim([0, delta_nu])
-        plt.savefig('./echelle/%s_echelle_%s_%s_%s.pdf' % (starname, i,
-                                                           minfreq, maxfreq))
+        plt.savefig('./echelle/%s_echelle_%s_%s.pdf' % (starname, i,
+                                                           dnu))
+        plt.close()
 
 
-echelle('HD181096', 495, 595)
+echelle('HD181096')
