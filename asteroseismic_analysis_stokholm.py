@@ -52,8 +52,9 @@ Define the constants for the analysis. The constants are:
 """
 
 # Choose the star:
-starname = 'HD181096'
 ID = '181096'
+starname = 'HD' + ID
+
 
 # Define the frequency interval in cyclic frequencies (f=1/P).
 minfreq = 5
@@ -71,7 +72,7 @@ nmsigma = 7500
 ac_minheight = 0.15
 ac_comparorder = 700
 dv = 10
-nu_max_guess = 960
+nu_max_guess = 1000
 
 frequencies_from = None and (
     '/home/amalie/Dropbox/Uddannelse/UNI/1516 - fysik 3. år/' +
@@ -112,7 +113,6 @@ import plots
 
 import kicdata as kic
 import ts_powerspectrum as pspec
-import powerspectrum as psp
 
 # Make cryptic abbreviations
 minmax = 'min%s_max%s' % (minfreq, maxfreq)
@@ -169,6 +169,9 @@ def make_the_timeseries():
     print('Read and filter data')
     # Load data from the star
     time, flux = kic.getdata(ID, kernelsize, quarter, sigma, noisecut)
+    time = time[:((len(time)+1)//2)]
+    flux = flux[:((len(flux)+1)//2)]
+    assert len(time) == len(flux)
 
     # Calculate and print Nyquist-frequency
     dt = np.diff(time)
@@ -358,7 +361,7 @@ def background(nu_max):
 
     # Cut out around the signals in order not to overfit them
     minimum = 600
-    maximum = 1300
+    maximum = 1050
 
     filt = (freq > minimum) & (freq < maximum)
     freq_filt = freq[~filt]
@@ -714,7 +717,7 @@ def scalingrelation():
     T_eff = 6211
     s_teff = 91
     # From half the timeseries
-    s_nmax = 21
+    s_nmax = 4
     s_dn = 0.2
 
     # Find asteroseismic parameters
@@ -757,27 +760,28 @@ def plot_ps():
     minimum = 500
     maximum = 1500
 
+    delta_nu = 53.8
     filt = (freq > minimum) & (freq < maximum)
     freq = freq[filt]
     spower = spower[filt]
 
-    peak, height = echelle(54.18, freq, spower)
+    peak, height = echelle(delta_nu, freq, spower)
 
     plt.figure()
     plt.plot(freq, spower, 'k', linewidth=1)
     #plt.plot(peak, height, 'ro')
-
+    """
     n, l, f = np.loadtxt('10005473fre.txt', skiprows=1, usecols=(0, 1, 2, )).T
     #timpeak = np.loadtxt('181096.pkb', usecols=(2,)).T
     #amaliepeak = np.loadtxt('181096.txt', usecols=(2,)).T
     plt.plot(f, np.ones(len(f)) * 2, 'bo')
     plt.plot(peak, np.ones(len(peak)) * 2.5, 'ro')
-    """
+    
     for freq in f:
         plt.axvline(x=freq, color='b', linestyle='-')
     for peak in amaliepeak:
         plt.axvline(x=peak, color='r', linestyle='-')
-    """
+    
     plt.xlim([minimum, maximum])
     # plt.title(r'The power spectrum of %s' % starname)
     plt.xlabel(r'Frequency [$\mu$Hz]')
@@ -785,8 +789,8 @@ def plot_ps():
     plt.savefig('zoom_cps%s_%s_%s_min_%smax_%s.pdf' %
                 (starname, minfreq, maxfreq, minimum, maximum))
     plt.show()
-
-    print(np.transpose([peak, np.round((peak/54.5)-1)]))
+    """
+    print(np.transpose([peak, np.round((peak/delta_nu)-1)]))
 
 
 # Make an Échelle diagram
@@ -797,6 +801,7 @@ def echelle(delta_nu, freq, power):
     e_minheight = 0.17 * np.amax(power)
 
     peak, height = find_peaks(freq, power, e_minheight, e_comparorder)
+    """
     peakmod = np.mod(peak, delta_nu)
 
     n, l, f = np.loadtxt('10005473fre.txt', skiprows=1, usecols=(0, 1, 2, )).T
@@ -815,17 +820,18 @@ def echelle(delta_nu, freq, power):
     plt.xlim([0, delta_nu])
     plt.savefig('%s_echelle_%s_%s.pdf' % (starname, minfreq, maxfreq))
     plt.show()
+    """
     return peak, height
 
 
 if __name__ == "__main__":
     # Here the functions are called
     #make_the_timeseries()
-    make_the_power_spectrum()
+    #make_the_power_spectrum()
     #smooth_power_spectrum()
     #power_density_spectrum()
     #background(nu_max_guess)
     #scalingrelation()
-    #plot_ps()
+    plot_ps()
     #npzsavetxt(ts, ('%s/timeseries_%s.txt' % (direc, para)))
     #npzsavetxt(ps, ('%s/power_%s.txt' % (direc, para)))
