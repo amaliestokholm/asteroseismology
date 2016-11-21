@@ -111,7 +111,7 @@ def overplot(starfile):
         l, n, f, q = np.loadtxt(path, usecols=(0, 1, 2, 3)).T
 
         dnu = np.median(np.diff(f[l == 0]))
-        h, nu0 = echelle(starfile, dnu)
+        h = echelle(starfile, dnu)
 
         # fcorr, llist = kjeldsen_corr(l, n, f, q, dnu, nu0, n_obs,
         #   l_obs, f_obs, dnu_obs)
@@ -140,7 +140,6 @@ def overplot(starfile):
 def echelle(filename, delta_nu, save=None):
     freq, power = np.loadtxt(filename).T
 
-    nu0 = freq[np.argmax(power)]
     fres = (freq[-1] - freq[0]) / (len(freq)-1)
     numax = (delta_nu / 0.263) ** (1 / 0.772)
     nmax = int(np.round(((numax - freq[0]) / delta_nu) - 1))
@@ -168,6 +167,6 @@ def echelle(filename, delta_nu, save=None):
                extent=(0, dnu, start * fres, endo * fres))
     if save is not None:
         plt.savefig('./%s_echelle_%s.pdf' % ('181096', delta_nu))
-    return h, nu0
+    return h
 
 overplot('181096.txt')
