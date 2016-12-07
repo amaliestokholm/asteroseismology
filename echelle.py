@@ -33,29 +33,30 @@ def fix_margins():
     plt.subplots_adjust(left=0.12, right=0.95, bottom=0.15, top=0.95)
 
 
-Modes = namedtuple('Modes', 'l n f q dnu'.split())
+Modes = namedtuple('Modes', 'l n f inertia dnu'.split())
 
 
 def kjeldsen_corr(model_modes, observed_modes):
-    l, n, f, q, dnu = model_modes
+    l, n, f, inertia, dnu = model_modes
     n_obs, l_obs, f_obs, _, dnu_obs = observed_modes
     # Kjeldsen correction
     # Correcting stellar oscillation frequencies for
     # near-surface effects, Kjeldsen et al., 2008
-    b = 4.90  # from a solar model
+    # bcor = 4.9  # from a solar model
     nu0 = 1000
     print('kjeldsen')
     output = []
     llist = []
-    i_l0 = q[l == 0]
+    i_l0 = inertia[l == 0]
     nl0 = n[l == 0]
 
     plt.figure()
-    plt.xlabel(r'$\nu_{\text{model}}$ [$\mu$Hz]')
-    plt.ylabel(r'$\nu-\nu_{\text{model}}$ [$\mu$Hz]')
+    fix_margins()
+    plt.xlabel(r'$\nu_{{model}}$ [$\mu$Hz]')
+    plt.ylabel(r'$\nu-\nu_{{model}}$ [$\mu$Hz]')
     color = ['b', 'g', 'y', 'm']
-    ls_obs = np.unique(l_obs)
-    for k in ls_obs[:-1]:
+    ls_obs = [0]  # np.unique(l_obs)
+    for k in ls_obs:
         print('l=%s' % k)
         fl_obs = f_obs[l_obs == k]
         nl_obs = n_obs[l_obs == k]
@@ -63,38 +64,49 @@ def kjeldsen_corr(model_modes, observed_modes):
 
         fl = f[l == k]
         nl = n[l == k]
-        ql = q[l == k]
-        f_obs = []
-        f_ref = []
-        qlist = []
+        inertia_l = inertia[l == k]
+        fnl_obs = []
+        fnl_ref = []
+        inertialist = []
 
         ns = set(nl) & set(nl_obs)
         for m in sorted(ns):
             element_obs, = fl_obs[nl_obs == m]
             element, = fl[nl == m]
-            f_obs.append(element_obs)
-            f_ref.append(element)
-            qnl, = ql[nl == m]
+            fnl_obs.append(element_obs)
+            fnl_ref.append(element)
+            inertia_nl, = inertia_l[nl == m]
             i_l0s, = i_l0[nl0 == m]
-            qs = qnl / i_l0s
-            qlist.append(qs)
-        f_ref = np.asarray(f_ref)
-        f_obs = np.asarray(f_obs)
-        qlist = np.asarray(qlist)
-        r = ((b - 1) *
-             (b * ((f_ref) / (f_obs)) - ((dnu) / (dnu_obs))) ** (-1))
-        print('r=%s' % r)
-        a = ((np.mean(f_obs) - r * np.mean(f_ref)) /
-             (len(f_obs) ** (-1) * np.sum((f_obs / nu0) ** b)))
-        f_corr = (f_ref + (1 / qlist) * (a / r) * (f_ref / nu0) ** b)
+            inertias = inertia_nl / i_l0s
+            inertialist.append(inertias)
+        fnl_ref = np.asarray(fnl_ref)
+        fnl_obs = np.asarray(fnl_obs)
+        inertialist = np.asarray(inertialist)
+        #r = ((bcor - 1) *
+        #     (bcor * ((fnl_ref) / (fnl_obs)) - ((dnu) / (dnu_obs))) ** (-1))
+        r = 1
+        
+        bcor = ((r * ((dnu) / (dnu_obs)) - 1) *
+               ((r * ((fnl_ref) / (fnl_obs)) - 1) ** (-1)))
+        acor = ((np.mean(fnl_obs) - r * np.mean(fnl_ref)) /
+               (len(fnl_obs) ** (-1) * np.sum((fnl_obs / nu0) ** bcor)))
+        print(acor)
+        
+        
+        
+        f_corr = (fnl_ref + (1 / inertialist) * (acor / r) * (fnl_ref / nu0) ** bcor)
+        
         output.append(f_corr)
         k = int(k)
         llist.append(k)
-        print(k, color[k])
-        plt.plot(f_ref, (f_obs - f_ref), color=color[k], marker='d')
-        plt.plot(f_ref, (f_corr - f_ref), color=color[k], marker='o')
+        plt.plot(fnl_ref, (fnl_obs - fnl_ref), color=color[k],
+                 label=r'$\nu_{obs}-\nu_{ref}$', marker='d')
+        plt.plot(fnl_ref, (f_corr - fnl_ref), color=color[k],
+                 label=r'$\nu_{corr}-\nu_{ref}$', marker='o')
 
-    plt.savefig('./echelle/kjeldsen_%s.pdf' % (dnu))
+    plt.legend(bbox_to_anchor=(0., 1.02, 1., .102), loc=3, ncol=2,
+               mode="expand", borderaxespad=0., frameon=False)
+    plt.savefig('./echelle/kjeldsen_%s.pdf' % (dnu), bbox_inches='tight')
     plt.close()
     return output, llist
 
@@ -102,14 +114,14 @@ def kjeldsen_corr(model_modes, observed_modes):
 def chisqr(f_obs, f_corr):
     N = len(f_obs)
     sigma_f_obs = 1  # could be read from mikkelfreq and find median
-    f_corr = f_ref + (1/q) * (a/r) * ((f_obs)/f0) ** b
+    f_corr = f_ref + (1/inertia) * (a/r) * ((f_obs)/f0) ** b
     return ((1 / N) * np.sum(((f_corr - f_obs) /
             (sigma_f_obs)) ** 2))
 
 
 def overplot(job, starfile, obsfile, dnu_obs):
     starname = starfile.replace('.txt', '')
-    n_obs, l_obs, f_obs, q_obs = np.loadtxt(
+    n_obs, l_obs, f_obs, inertia_obs = np.loadtxt(
         obsfile, skiprows=1, usecols=(0, 1, 2, 3)).T
     closestfl0_list = []
     dir = './%s/X072669_Y02628_nor/freqs/' % job
@@ -117,15 +129,15 @@ def overplot(job, starfile, obsfile, dnu_obs):
     nl0_obs = np.array(sorted(n_obs[l_obs == 0]))
 
     datafiles = sorted([s for s in os.listdir(dir) if s.startswith('obs')])
-    # datafiles = datafiles[27:30]
-    observed_modes = Modes(n_obs, l_obs, f_obs, q_obs, dnu_obs)
+    datafiles = datafiles[7:9]
+    observed_modes = Modes(n_obs, l_obs, f_obs, inertia_obs, dnu_obs)
     for i, datafile in enumerate(datafiles):
         if i % 20 == 0:
             print(i)
         path = os.path.join(dir, datafile)
-        l, n, f, q = np.loadtxt(path, usecols=(0, 1, 2, 3)).T
+        l, n, f, inertia = np.loadtxt(path, usecols=(0, 1, 2, 3)).T
         dnu = np.median(np.diff(f[l == 0]))
-        model_modes = Modes(l, n, f, q, dnu)
+        model_modes = Modes(l, n, f, inertia, dnu)
 
         h, plot_position = echelle(starfile, observed_modes.dnu)
 
