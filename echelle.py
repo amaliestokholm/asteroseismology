@@ -39,12 +39,14 @@ class Modes(ModesBase):
     def modes_for_single_l(self, l):
         mask = self.l == l
         return Modes(self.l[mask], self.n[mask], self.f[mask],
-                     self.inertia[mask], self.dnu[mask])
+                     self.inertia[mask], self.dnu)
 
 
 def kjeldsen_corr(model_modes, observed_modes):
     l, n, f, inertia, dnu = model_modes
     n_obs, l_obs, f_obs, _, dnu_obs = observed_modes
+    assert l.shape == n.shape == f.shape == inertia.shape
+    assert dnu.shape == ()
     # Kjeldsen correction
     # Correcting stellar oscillation frequencies for
     # near-surface effects, Kjeldsen et al., 2008
