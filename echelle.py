@@ -41,6 +41,11 @@ class Modes(ModesBase):
         return Modes(self.l[mask], self.n[mask], self.f[mask],
                      self.inertia[mask], self.dnu)
 
+    def for_n(self, n):
+        mask = self.n == n
+        return Modes(self.l[mask], self.n[mask], self.f[mask],
+                     self.inertia[mask], self.dnu)
+
 
 def kjeldsen_corr(model_modes, observed_modes):
     l, n, f, inertia, dnu = model_modes
