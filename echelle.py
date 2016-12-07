@@ -36,7 +36,7 @@ def fix_margins():
 ModesBase = namedtuple('Modes', 'l n f inertia dnu'.split())
 
 class Modes(ModesBase):
-    def modes_for_single_l(self, l):
+    def for_l(self, l):
         mask = self.l == l
         return Modes(self.l[mask], self.n[mask], self.f[mask],
                      self.inertia[mask], self.dnu)
@@ -62,7 +62,7 @@ def kjeldsen_corr(model_modes, observed_modes):
     llist = []
     # inertia_l0 = inertia[l == 0]
     # nl0 = n[l == 0]
-    radial_model_modes = model_modes.modes_for_single_l(l=0)
+    radial_model_modes = model_modes.for_l(l=0)
 
     plt.figure()
     fix_margins()
@@ -72,10 +72,10 @@ def kjeldsen_corr(model_modes, observed_modes):
     ls_obs = [0]  # np.unique(l_obs)
     for k in ls_obs:
         print('l=%s' % k)
-        angular_observed_modes = observed_modes.modes_for_single_l(l=k)
+        angular_observed_modes = observed_modes.for_l(l=k)
         assert len(angular_observed_modes.n) == len(np.unique(angular_observed_modes.n))
     
-        angular_model_modes = model_modes.modes_for_single_l(l=k)
+        angular_model_modes = model_modes.for_l(l=k)
         inertia_l = inertia[l == k]
         fnl_obs = []
         fnl_ref = []
