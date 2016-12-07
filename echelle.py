@@ -55,8 +55,8 @@ def kjeldsen_corr(model_modes, observed_modes):
     print('kjeldsen')
     output = []
     llist = []
-    inertia_l0 = inertia[l == 0]
-    nl0 = n[l == 0]
+    # inertia_l0 = inertia[l == 0]
+    # nl0 = n[l == 0]
     radial_model_modes = model_modes.modes_for_single_l(l=0)
 
     plt.figure()
@@ -85,7 +85,7 @@ def kjeldsen_corr(model_modes, observed_modes):
             fnl_obs.append(element_obs)
             fnl_ref.append(element)
             inertia_nl, = inertia_l[nl == m]
-            inertia_l0s, = inertia_l0[nl0 == m]
+            inertia_l0s, = radial_model_modes.inertia[nl0 == m]
             inertias = inertia_nl / inertia_l0s
             inertialist.append(inertias)
         fnl_ref = np.asarray(fnl_ref)
