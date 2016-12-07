@@ -76,8 +76,8 @@ def kjeldsen_corr(model_modes, observed_modes):
             fnl_obs.append(element_obs)
             fnl_ref.append(element)
             inertia_nl, = inertia_l[nl == m]
-            i_l0s, = inertia_l0[nl0 == m]
-            inertias = inertia_nl / i_l0s
+            inertia_l0s, = inertia_l0[nl0 == m]
+            inertias = inertia_nl / inertia_l0s
             inertialist.append(inertias)
         fnl_ref = np.asarray(fnl_ref)
         fnl_obs = np.asarray(fnl_obs)
