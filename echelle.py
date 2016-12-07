@@ -76,18 +76,18 @@ def kjeldsen_corr(model_modes, observed_modes):
         assert len(angular_observed_modes.n) == len(np.unique(angular_observed_modes.n))
     
         angular_model_modes = model_modes.for_l(l=k)
-        inertia_l = inertia[l == k]
+        inertia_l = angular_model_modes.inertia
         fnl_obs = []
         fnl_ref = []
         inertialist = []
 
         ns = set(angular_model_modes.n) & set(angular_observed_modes.n)
         for m in sorted(ns):
-            element_obs, = angular_observed_modes.f[angular_observed_modes.n == m]
-            element, = angular_model_modes.f[angular_model_modes.n == m]
-            fnl_obs.append(element_obs)
-            fnl_ref.append(element)
-            inertia_nl, = inertia_l[angular_model_modes.n == m]
+            selected = angular_model_modes.for_n(n=m)
+            selected_obs = angular_observed_modes.for_n(n=m)
+            fnl_obs.append(selected_obs.f[0])
+            fnl_ref.append(selected.f[0])
+            inertia_nl, = selected.inertia
             inertia_l0s, = radial_model_modes.inertia[radial_model_modes.n == m]
             inertias = inertia_nl / inertia_l0s
             inertialist.append(inertias)
