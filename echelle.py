@@ -55,6 +55,7 @@ class Modes(ModesBase):
         return fnl
         
 def kjeldsen_corr(model_modes, observed_modes):
+    assert len(observed_modes.n)
     dnu = model_modes.dnu
     dnu_obs = observed_modes.dnu
     # Kjeldsen correction
@@ -82,9 +83,12 @@ def kjeldsen_corr(model_modes, observed_modes):
     
         angular_model_modes = model_modes.for_l(l=l)
         inertia_l = angular_model_modes.inertia
+        assert len(angular_model_modes.n)
+        assert len(angular_observed_modes.n)
 
         ns = set(angular_model_modes.n) & set(angular_observed_modes.n)
         ns = sorted(ns)
+        assert ns
         fnl_ref = angular_model_modes.for_ns(ns)
         fnl_obs = angular_observed_modes.for_ns(ns)
         inertialist = []
