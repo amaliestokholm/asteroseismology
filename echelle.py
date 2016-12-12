@@ -48,17 +48,15 @@ class Modes(ModesBase):
 
     def for_ns(self, ns):
         fnl = []
-        for m in ns:
-            selected = self.for_n(n=m)
+        for n in ns:
+            selected = self.for_n(n=n)
             fnl.append(selected.f[0])
         fnl = np.asarray(fnl)
         return fnl
         
 def kjeldsen_corr(model_modes, observed_modes):
-    l, n, f, inertia, dnu = model_modes
-    n_obs, l_obs, f_obs, _, dnu_obs = observed_modes
-    assert l.shape == n.shape == f.shape == inertia.shape
-    assert dnu.shape == ()
+    dnu = model_modes.dnu
+    dnu_obs = observed_modes.dnu
     # Kjeldsen correction
     # Correcting stellar oscillation frequencies for
     # near-surface effects, Kjeldsen et al., 2008
@@ -77,12 +75,12 @@ def kjeldsen_corr(model_modes, observed_modes):
     plt.ylabel(r'$\nu-\nu_{{model}}$ [$\mu$Hz]')
     color = ['b', 'g', 'y', 'm']
     ls_obs = [0]  # np.unique(l_obs)
-    for k in ls_obs:
-        print('l=%s' % k)
-        angular_observed_modes = observed_modes.for_l(l=k)
+    for l in ls_obs:
+        print('l=%s' % l)
+        angular_observed_modes = observed_modes.for_l(l=l)
         assert len(angular_observed_modes.n) == len(np.unique(angular_observed_modes.n))
     
-        angular_model_modes = model_modes.for_l(l=k)
+        angular_model_modes = model_modes.for_l(l=l)
         inertia_l = angular_model_modes.inertia
 
         ns = set(angular_model_modes.n) & set(angular_observed_modes.n)
@@ -90,9 +88,9 @@ def kjeldsen_corr(model_modes, observed_modes):
         fnl_ref = angular_model_modes.for_ns(ns)
         fnl_obs = angular_observed_modes.for_ns(ns)
         inertialist = []
-        for m in ns:
+        for n in ns:
             inertia_nl, = selected.inertia
-            inertia_l0s, = radial_model_modes.inertia[radial_model_modes.n == m]
+            inertia_l0s, = radial_model_modes.inertia[radial_model_modes.n == n]
             inertias = inertia_nl / inertia_l0s
             inertialist.append(inertias)
         inertialist = np.asarray(inertialist)
@@ -108,11 +106,11 @@ def kjeldsen_corr(model_modes, observed_modes):
         f_corr = (fnl_ref + (1 / inertialist) * (acor / r) * (fnl_ref / nu0) ** bcor)
 
         output.append(f_corr)
-        k = int(k)
-        llist.append(k)
-        plt.plot(fnl_ref, (fnl_obs - fnl_ref), color=color[k],
+        l = int(l)
+        llist.append(l)
+        plt.plot(fnl_ref, (fnl_obs - fnl_ref), color=color[l],
                  label=r'$\nu_{obs}-\nu_{ref}$', marker='d')
-        plt.plot(fnl_ref, (f_corr - fnl_ref), color=color[k],
+        plt.plot(fnl_ref, (f_corr - fnl_ref), color=color[l],
                  label=r'$\nu_{corr}-\nu_{ref}$', marker='o')
 
     plt.legend(bbox_to_anchor=(0., 1.02, 1., .102), loc=3, ncol=2,
