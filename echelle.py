@@ -100,17 +100,14 @@ def kjeldsen_corr(model_modes, observed_modes):
         #r = ((bcor - 1) *
         #     (bcor * ((fnl_ref) / (fnl_obs)) - ((dnu) / (dnu_obs))) ** (-1))
         r = 1
-        
+
         bcor = ((r * ((dnu) / (dnu_obs)) - 1) *
                ((r * ((fnl_ref) / (fnl_obs)) - 1) ** (-1)))
         acor = ((np.mean(fnl_obs) - r * np.mean(fnl_ref)) /
                (len(fnl_obs) ** (-1) * np.sum((fnl_obs / nu0) ** bcor)))
         print(acor)
-        
-        
-        
         f_corr = (fnl_ref + (1 / inertialist) * (acor / r) * (fnl_ref / nu0) ** bcor)
-        
+
         output.append(f_corr)
         k = int(k)
         llist.append(k)
