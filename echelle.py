@@ -46,7 +46,14 @@ class Modes(ModesBase):
         return Modes(self.l[mask], self.n[mask], self.f[mask],
                      self.inertia[mask], self.dnu)
 
-
+    def for_ns(self, ns):
+        fnl = []
+        for m in ns:
+            selected = self.for_n(n=m)
+            fnl.append(selected.f[0])
+        fnl = np.asarray(fnl)
+        return fnl
+        
 def kjeldsen_corr(model_modes, observed_modes):
     l, n, f, inertia, dnu = model_modes
     n_obs, l_obs, f_obs, _, dnu_obs = observed_modes
@@ -80,16 +87,8 @@ def kjeldsen_corr(model_modes, observed_modes):
 
         ns = set(angular_model_modes.n) & set(angular_observed_modes.n)
         ns = sorted(ns)
-        fnl_ref = []
-        for m in ns:
-            selected = angular_model_modes.for_n(n=m)
-            fnl_ref.append(selected.f[0])
-        fnl_ref = np.asarray(fnl_ref)
-        fnl_obs = []
-        for m in ns:
-            selected_obs = angular_observed_modes.for_n(n=m)
-            fnl_obs.append(selected_obs.f[0])
-        fnl_obs = np.asarray(fnl_obs)
+        fnl_ref = angular_model_modes.for_ns(ns)
+        fnl_obs = angular_observed_modes.for_ns(ns)
         inertialist = []
         for m in ns:
             inertia_nl, = selected.inertia
