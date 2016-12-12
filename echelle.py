@@ -143,14 +143,15 @@ def overplot(job, starfile, obsfile, dnu_obs):
 
     datafiles = sorted([s for s in os.listdir(dir) if s.startswith('obs')])
     datafiles = datafiles[7:9]
-    observed_modes = Modes(n_obs, l_obs, f_obs, inertia_obs, dnu_obs)
+    observed_modes = Modes(n=n_obs, l=l_obs, f=f_obs,
+                           inertia=inertia_obs, dnu=dnu_obs)
     for i, datafile in enumerate(datafiles):
         if i % 20 == 0:
             print(i)
         path = os.path.join(dir, datafile)
         l, n, f, inertia = np.loadtxt(path, usecols=(0, 1, 2, 3)).T
         dnu = np.median(np.diff(f[l == 0]))
-        model_modes = Modes(l, n, f, inertia, dnu)
+        model_modes = Modes(l=l, n=n, f=f, inertia=inertia, dnu=dnu)
 
         h, plot_position = echelle(starfile, observed_modes.dnu)
 
