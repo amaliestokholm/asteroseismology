@@ -108,7 +108,7 @@ def kjeldsen_corr(model_modes, observed_modes):
                (len(fnl_obs) ** (-1) * np.sum((fnl_obs / nu0) ** bcor)))
         print('a=%s' % acor)
         f_corr = (fnl_ref + (1 / inertialist) * (acor / r) * (fnl_ref / nu0) ** bcor)
-        print(chisqr(f_obs, f_corr))
+        # print(chisqr(observed_modes.f, f_corr))
         output.append(f_corr)
         l = int(l)
         llist.append(l)
@@ -141,7 +141,7 @@ def overplot(job, starfile, obsfile, dnu_obs):
     nl0_obs = np.array(sorted(n_obs[l_obs == 0]))
 
     datafiles = sorted([s for s in os.listdir(dir) if s.startswith('obs')])
-    datafiles = datafiles[7:9]
+    # datafiles = datafiles[7:9]
     observed_modes = Modes(n=n_obs, l=l_obs, f=f_obs,
                            inertia=inertia_obs, dnu=dnu_obs)
     for i, datafile in enumerate(datafiles):
@@ -156,7 +156,6 @@ def overplot(job, starfile, obsfile, dnu_obs):
 
         fcorr, llist = kjeldsen_corr(model_modes,
                                      observed_modes)
-        """
         fl0 = np.array(sorted(f[l == 0]))
         nl0 = np.array(sorted(n[l == 0]))
         # closestfl0_index = (min(range(len(fl0)),
@@ -195,7 +194,6 @@ def overplot(job, starfile, obsfile, dnu_obs):
         print(closestfl0_list[i], n[closestfl0_list[i] == f], fl0_obs[0])
     minfl0 = min(closestfl0_list, key=lambda p: abs(p - fl0_obs[0]))
     print(closestfl0_list.index(minfl0), minfl0, fl0_obs[0])
-    """
 
 
 def echelle(filename, delta_nu, save=None):
