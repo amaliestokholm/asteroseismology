@@ -55,7 +55,8 @@ class Modes(ModesBase):
         return fnl
         
     def asarray(self):
-        return Modes(np.asarray(l=self.l), np.asarray(n=self.n), np.asarray(f=self.f), np.asarray(inertia=self.inertia), np.asarray(dnu=self.dnu))
+        return Modes(l=np.asarray(self.l), n=np.asarray(self.n), f=np.asarray(self.f),
+                     inertia=np.asarray(self.inertia), dnu=np.asarray(self.dnu))
 
 
 def kjeldsen_corr(model_modes, observed_modes):
@@ -113,13 +114,13 @@ def kjeldsen_corr(model_modes, observed_modes):
                (len(fnl_obs) ** (-1) * np.sum((fnl_obs / nu0) ** bcor)))
         print('a=%s' % acor)
         f_corr = (fnl_ref + (1 / inertialist) * (acor / r) * (fnl_ref / nu0) ** bcor)
-        corrected_modes.f.append(f_corr)
+        corrected_modes.f.extend(f_corr)
         l = int(l)
         plt.plot(fnl_ref, (fnl_obs - fnl_ref), color=color[l],
                  label=r'l=%s $\nu_{obs}-\nu_{ref}$'% l, marker='d')
         plt.plot(fnl_ref, (f_corr - fnl_ref), color=color[l],
                  label=r'l=%s $\nu_{corr}-\nu_{ref}$'% l, marker='o')
-    corrected_modes.asarray(corrected_modes)
+    corrected_modes = corrected_modes.asarray()
     print(corrected_modes)
     plt.legend(bbox_to_anchor=(0., 1.02, 1., .102), loc=3, ncol=3,
                mode="expand", borderaxespad=0., frameon=False)
@@ -178,12 +179,12 @@ def overplot(job, starfile, obsfile, dnu_obs):
         plt.plot(*plot_position(fl0), 'o', markersize=7,
                  markeredgewidth=1, markeredgecolor=l0color,
                  markerfacecolor='none', label=r'$\nu$ with $l=0$')
-        plt.plot(*plot_position(fl0_obs), 'd', markersize=7,
-                 markeredgewidth=1, markeredgecolor=l0color,
-                 markerfacecolor='none', label=r'$\nu_{{obs}}$ with $l=0$')
         plt.plot(*plot_position(corrected_modes.f),'*', markersize=7,
                  markeredgewidth=1, markeredgecolor=l0color,
                  markerfacecolor='none', label=r'$\nu_{corr}$ with $l=0$')
+        plt.plot(*plot_position(fl0_obs), 'd', markersize=7,
+                 markeredgewidth=1, markeredgecolor=l0color,
+                 markerfacecolor='none', label=r'$\nu_{{obs}}$ with $l=0$')
         # plt.plot(*plot_position(f[l == 1]), 'o', markersize=7,
         #         markeredgewidth=1, markeredgecolor=l1color,
         #         markerfacecolor='none', label=r'$\nu$ with $l=1$')
