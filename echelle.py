@@ -54,6 +54,10 @@ class Modes(ModesBase):
         fnl = np.asarray(fnl)
         return fnl
         
+    def asarray(self):
+        return Modes(np.asarray(l=self.l), np.asarray(n=self.n), np.asarray(f=self.f), np.asarray(inertia=self.inertia), np.asarray(dnu=self.dnu))
+
+
 def kjeldsen_corr(model_modes, observed_modes):
     assert len(observed_modes.n)
     dnu = model_modes.dnu
@@ -64,8 +68,7 @@ def kjeldsen_corr(model_modes, observed_modes):
     bcor = 4.9  # from a solar model
     nu0 = 996
     print('kjeldsen')
-    output = []
-    llist = []
+    corrected_modes = Modes(l=[], n=[], f=[], inertia=[], dnu=dnu)
     # inertia_l0 = inertia[l == 0]
     # nl0 = n[l == 0]
     radial_model_modes = model_modes.for_l(l=0)
@@ -98,6 +101,8 @@ def kjeldsen_corr(model_modes, observed_modes):
             inertia_l0s, = radial_model_modes.inertia[radial_model_modes.n == n]
             inertias = inertia_nl / inertia_l0s
             inertialist.append(inertias)
+            corrected_modes.n.append(n)
+            corrected_modes.l.append(l)
         inertialist = np.asarray(inertialist)
         r = ((bcor - 1) *
              (bcor * ((fnl_ref) / (fnl_obs)) - ((dnu) / (dnu_obs))) ** (-1))
@@ -108,20 +113,20 @@ def kjeldsen_corr(model_modes, observed_modes):
                (len(fnl_obs) ** (-1) * np.sum((fnl_obs / nu0) ** bcor)))
         print('a=%s' % acor)
         f_corr = (fnl_ref + (1 / inertialist) * (acor / r) * (fnl_ref / nu0) ** bcor)
-        # print(chisqr(observed_modes.f, f_corr))
-        output.append(f_corr)
+        corrected_modes.f.append(f_corr)
         l = int(l)
-        llist.append(l)
         plt.plot(fnl_ref, (fnl_obs - fnl_ref), color=color[l],
                  label=r'l=%s $\nu_{obs}-\nu_{ref}$'% l, marker='d')
         plt.plot(fnl_ref, (f_corr - fnl_ref), color=color[l],
                  label=r'l=%s $\nu_{corr}-\nu_{ref}$'% l, marker='o')
-
+    corrected_modes.asarray(corrected_modes)
+    print(corrected_modes)
     plt.legend(bbox_to_anchor=(0., 1.02, 1., .102), loc=3, ncol=3,
                mode="expand", borderaxespad=0., frameon=False)
     plt.savefig('./echelle/kjeldsen_%s.pdf' % (dnu), bbox_inches='tight')
     plt.close()
-    return output, llist
+    
+    return corrected_modes 
 
 
 def chisqr(f_obs, f_corr):
@@ -141,7 +146,7 @@ def overplot(job, starfile, obsfile, dnu_obs):
     nl0_obs = np.array(sorted(n_obs[l_obs == 0]))
 
     datafiles = sorted([s for s in os.listdir(dir) if s.startswith('obs')])
-    # datafiles = datafiles[7:9]
+    datafiles = datafiles[7:9]
     observed_modes = Modes(n=n_obs, l=l_obs, f=f_obs,
                            inertia=inertia_obs, dnu=dnu_obs)
     for i, datafile in enumerate(datafiles):
@@ -154,8 +159,7 @@ def overplot(job, starfile, obsfile, dnu_obs):
 
         h, plot_position = echelle(starfile, observed_modes.dnu)
 
-        fcorr, llist = kjeldsen_corr(model_modes,
-                                     observed_modes)
+        corrected_modes = kjeldsen_corr(model_modes, observed_modes)
         fl0 = np.array(sorted(f[l == 0]))
         nl0 = np.array(sorted(n[l == 0]))
         # closestfl0_index = (min(range(len(fl0)),
@@ -177,15 +181,12 @@ def overplot(job, starfile, obsfile, dnu_obs):
         plt.plot(*plot_position(fl0_obs), 'd', markersize=7,
                  markeredgewidth=1, markeredgecolor=l0color,
                  markerfacecolor='none', label=r'$\nu_{{obs}}$ with $l=0$')
-        # for abe, kat in zip(fcorr, llist):
-        #    plt.plot(*plot_position(abe), color=color[kat], marker='d')
+        plt.plot(*plot_position(corrected_modes.f),'*', markersize=7,
+                 markeredgewidth=1, markeredgecolor=l0color,
+                 markerfacecolor='none', label=r'$\nu_{corr}$ with $l=0$')
         # plt.plot(*plot_position(f[l == 1]), 'o', markersize=7,
         #         markeredgewidth=1, markeredgecolor=l1color,
         #         markerfacecolor='none', label=r'$\nu$ with $l=1$')
-        # plt.plot(*plot_position(f[l == 2]), 'yo')
-        # plt.plot(*plot_position(f[l == 3]), 'mo')
-        # h.legend(loc='upper center', bbox_to_anchor=(0.5, 1.05),
-        #          ncol=3, fancybox=True, shadow=True)
         plt.legend(bbox_to_anchor=(0., 1.02, 1., .102), loc=3, ncol=2,
                    mode="expand", borderaxespad=0., frameon=False)
         plt.savefig('./echelle/%s/%s_echelle_%s_%s.pdf' %
