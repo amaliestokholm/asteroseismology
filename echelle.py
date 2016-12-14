@@ -163,8 +163,8 @@ def kjeldsen_corr(model_modes, observed_modes):
                mode="expand", borderaxespad=0., frameon=False)
     plt.savefig('./echelle/kjeldsen_%s.pdf' % (dnu), bbox_inches='tight')
     plt.close()
-    print(chisqr(observed_modes, corrected_modes)) 
-    return corrected_modes 
+    chisqr_value = chisqr(observed_modes, corrected_modes) 
+    return corrected_modes, chisqr_value
 
 
 def chisqr(observed_modes, corrected_modes):
@@ -186,6 +186,7 @@ def overplot(job, starfile, obsfile, dnu_obs):
     n_obs, l_obs, f_obs, error_obs = np.loadtxt(
         obsfile, skiprows=1, usecols=(0, 1, 2, 3)).T
     closestfl0_list = []
+    chisqr_list = []
     dir = './%s/X072669_Y02628_nor/freqs/' % job
     fl0_obs = np.array(sorted(f_obs[l_obs == 0]))
     nl0_obs = np.array(sorted(n_obs[l_obs == 0]))
@@ -204,7 +205,8 @@ def overplot(job, starfile, obsfile, dnu_obs):
 
         h, plot_position = echelle(starfile, observed_modes.dnu)
 
-        corrected_modes = kjeldsen_corr(model_modes, observed_modes)
+        corrected_modes, chisqr = kjeldsen_corr(model_modes, observed_modes)
+        chisqr_list.append(chisqr)
         fl0 = np.array(sorted(f[l == 0]))
         nl0 = np.array(sorted(n[l == 0]))
         # closestfl0_index = (min(range(len(fl0)),
@@ -239,7 +241,8 @@ def overplot(job, starfile, obsfile, dnu_obs):
         plt.close()
         print(closestfl0_list[i], n[closestfl0_list[i] == f], fl0_obs[0])
     minfl0 = min(closestfl0_list, key=lambda p: abs(p - fl0_obs[0]))
-    print(closestfl0_list.index(minfl0), minfl0, fl0_obs[0])
+    minchisqr = min(chisqr_list)
+    print(closestfl0_list.index(minfl0), minfl0, fl0_obs[0], chisqr_list.index(minchisqr), minchisqr)
 
 
 def echelle(filename, delta_nu, save=None):
