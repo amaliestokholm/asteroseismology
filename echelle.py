@@ -88,6 +88,14 @@ class Modes(ModesBase):
         dictionary = dict(zip(keys, values))
         return dictionary
 
+
+    def error_as_dict(self):
+        keys = zip(self.n, self.l)
+        values = self.error
+        dictionary = dict(zip(keys, values))
+        return dictionary
+
+
 def kjeldsen_corr(model_modes, observed_modes):
     assert len(observed_modes.n)
     dnu = model_modes.dnu
@@ -168,8 +176,9 @@ def chisqr(observed_modes, corrected_modes):
     f_obs = np.asarray([observed_dictionary[n, l] for (n,l) in nl_keys])
 
     N = len(f_obs)
-    sigma_f_obs = 1  # could be read from mikkelfreq and find median
-    return ((1 / N) * np.sum(((f_corr - f_obs) / (sigma_f_obs)) ** 2))
+    error_dict = observed_modes.error_as_dict()
+    errors = np.asarray([error_dict[n, l] for (n,l) in nl_keys])
+    return ((1 / N) * np.sum(((f_corr - f_obs) / (errors)) ** 2))
 
 
 def overplot(job, starfile, obsfile, dnu_obs):
