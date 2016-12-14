@@ -74,8 +74,8 @@ def kjeldsen_corr(model_modes, observed_modes):
     fix_margins()
     plt.xlabel(r'$\nu_{{model}}$ [$\mu$Hz]')
     plt.ylabel(r'$\nu-\nu_{{model}}$ [$\mu$Hz]')
-    color = ['b', 'g', 'y', 'm']
-    ls_obs = np.unique(observed_modes.l)
+    color = ['dodgerblue', 'limegreen', 'tomato', 'hotpink']
+    ls_obs = [0]  # np.unique(observed_modes.l)
     for l in ls_obs:
         print('l=%s' % l)
         angular_observed_modes = observed_modes.for_l(l=l)
@@ -108,16 +108,16 @@ def kjeldsen_corr(model_modes, observed_modes):
                (len(fnl_obs) ** (-1) * np.sum((fnl_obs / nu0) ** bcor)))
         print('a=%s' % acor)
         f_corr = (fnl_ref + (1 / inertialist) * (acor / r) * (fnl_ref / nu0) ** bcor)
-
+        print(chisqr(f_obs, f_corr))
         output.append(f_corr)
         l = int(l)
         llist.append(l)
         plt.plot(fnl_ref, (fnl_obs - fnl_ref), color=color[l],
-                 label=r'$\nu_{obs}-\nu_{ref}$', marker='d')
+                 label=r'l=%s $\nu_{obs}-\nu_{ref}$'% l, marker='d')
         plt.plot(fnl_ref, (f_corr - fnl_ref), color=color[l],
-                 label=r'$\nu_{corr}-\nu_{ref}$', marker='o')
+                 label=r'l=%s $\nu_{corr}-\nu_{ref}$'% l, marker='o')
 
-    plt.legend(bbox_to_anchor=(0., 1.02, 1., .102), loc=3, ncol=2,
+    plt.legend(bbox_to_anchor=(0., 1.02, 1., .102), loc=3, ncol=3,
                mode="expand", borderaxespad=0., frameon=False)
     plt.savefig('./echelle/kjeldsen_%s.pdf' % (dnu), bbox_inches='tight')
     plt.close()
@@ -127,7 +127,6 @@ def kjeldsen_corr(model_modes, observed_modes):
 def chisqr(f_obs, f_corr):
     N = len(f_obs)
     sigma_f_obs = 1  # could be read from mikkelfreq and find median
-    f_corr = f_ref + (1/inertia) * (a/r) * ((f_obs)/f0) ** b
     return ((1 / N) * np.sum(((f_corr - f_obs) /
             (sigma_f_obs)) ** 2))
 
