@@ -38,13 +38,21 @@ ModesBase = namedtuple('Modes', 'l n f inertia dnu'.split())
 class Modes(ModesBase):
     def for_l(self, l):
         mask = self.l == l
+        if self.inertia is None:
+            inertia = None
+        else:
+            inertia = self.inertia[mask]
         return Modes(self.l[mask], self.n[mask], self.f[mask],
-                     self.inertia[mask], self.dnu)
+                     inertia, self.dnu)
 
     def for_n(self, n):
         mask = self.n == n
+        if self.inertia is None:
+            inertia = None
+        else:
+            inertia = self.inertia[mask]
         return Modes(self.l[mask], self.n[mask], self.f[mask],
-                     self.inertia[mask], self.dnu)
+                     inertia, self.dnu)
 
     def for_ns(self, ns):
         fnl = []
@@ -55,8 +63,12 @@ class Modes(ModesBase):
         return fnl
         
     def asarray(self):
+        if self.inertia is None:
+            inertia = None
+        else:
+            inertia = np.asarray(self.inertia)
         return Modes(l=np.asarray(self.l), n=np.asarray(self.n), f=np.asarray(self.f),
-                     inertia=np.asarray(self.inertia), dnu=np.asarray(self.dnu))
+                     inertia=inertia, dnu=np.asarray(self.dnu))
 
     def f_as_dict(self):
         keys = zip(self.n, self.l)
@@ -145,8 +157,7 @@ def chisqr(observed_modes, corrected_modes):
 
     N = len(f_obs)
     sigma_f_obs = 1  # could be read from mikkelfreq and find median
-    return ((1 / N) * np.sum(((f_corr - f_obs) /
-            (sigma_f_obs)) ** 2))
+    return ((1 / N) * np.sum(((f_corr - f_obs) / (sigma_f_obs)) ** 2))
 
 
 def overplot(job, starfile, obsfile, dnu_obs):
@@ -161,7 +172,7 @@ def overplot(job, starfile, obsfile, dnu_obs):
     datafiles = sorted([s for s in os.listdir(dir) if s.startswith('obs')])
     datafiles = datafiles[7:9]
     observed_modes = Modes(n=n_obs, l=l_obs, f=f_obs,
-                           inertia=inertia_obs, dnu=dnu_obs)
+                           inertia=None, dnu=dnu_obs)
     for i, datafile in enumerate(datafiles):
         if i % 20 == 0:
             print(i)
