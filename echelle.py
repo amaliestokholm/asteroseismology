@@ -33,7 +33,7 @@ def fix_margins():
     plt.subplots_adjust(left=0.12, right=0.95, bottom=0.15, top=0.95)
 
 
-ModesBase = namedtuple('Modes', 'l n f inertia dnu'.split())
+ModesBase = namedtuple('Modes', 'l n f inertia error dnu'.split())
 
 class Modes(ModesBase):
     def for_l(self, l):
@@ -42,17 +42,25 @@ class Modes(ModesBase):
             inertia = None
         else:
             inertia = self.inertia[mask]
+        if self.error is None:
+            error = None
+        else:
+            error = self.error[mask]
         return Modes(self.l[mask], self.n[mask], self.f[mask],
-                     inertia, self.dnu)
+                     inertia, error, self.dnu)
 
     def for_n(self, n):
         mask = self.n == n
+        if self.error is None:
+            error = None
+        else:
+            error = self.error[mask]
         if self.inertia is None:
             inertia = None
         else:
             inertia = self.inertia[mask]
         return Modes(self.l[mask], self.n[mask], self.f[mask],
-                     inertia, self.dnu)
+                     inertia, error, self.dnu)
 
     def for_ns(self, ns):
         fnl = []
@@ -67,8 +75,12 @@ class Modes(ModesBase):
             inertia = None
         else:
             inertia = np.asarray(self.inertia)
+        if self.error is None:
+            error = None
+        else:
+            error = np.asarray(self.error)
         return Modes(l=np.asarray(self.l), n=np.asarray(self.n), f=np.asarray(self.f),
-                     inertia=inertia, dnu=np.asarray(self.dnu))
+                     inertia=inertia, error=error, dnu=np.asarray(self.dnu))
 
     def f_as_dict(self):
         keys = zip(self.n, self.l)
@@ -86,7 +98,7 @@ def kjeldsen_corr(model_modes, observed_modes):
     bcor = 4.9  # from a solar model
     nu0 = 996
     print('kjeldsen')
-    corrected_modes = Modes(l=[], n=[], f=[], inertia=[], dnu=dnu)
+    corrected_modes = Modes(l=[], n=[], f=[], inertia=[], error=None, dnu=dnu)
     # inertia_l0 = inertia[l == 0]
     # nl0 = n[l == 0]
     radial_model_modes = model_modes.for_l(l=0)
@@ -162,7 +174,7 @@ def chisqr(observed_modes, corrected_modes):
 
 def overplot(job, starfile, obsfile, dnu_obs):
     starname = starfile.replace('.txt', '')
-    n_obs, l_obs, f_obs, inertia_obs = np.loadtxt(
+    n_obs, l_obs, f_obs, error_obs = np.loadtxt(
         obsfile, skiprows=1, usecols=(0, 1, 2, 3)).T
     closestfl0_list = []
     dir = './%s/X072669_Y02628_nor/freqs/' % job
@@ -172,14 +184,14 @@ def overplot(job, starfile, obsfile, dnu_obs):
     datafiles = sorted([s for s in os.listdir(dir) if s.startswith('obs')])
     datafiles = datafiles[7:9]
     observed_modes = Modes(n=n_obs, l=l_obs, f=f_obs,
-                           inertia=None, dnu=dnu_obs)
+                           inertia=None, error=error_obs, dnu=dnu_obs)
     for i, datafile in enumerate(datafiles):
         if i % 20 == 0:
             print(i)
         path = os.path.join(dir, datafile)
         l, n, f, inertia = np.loadtxt(path, usecols=(0, 1, 2, 3)).T
         dnu = np.median(np.diff(f[l == 0]))
-        model_modes = Modes(l=l, n=n, f=f, inertia=inertia, dnu=dnu)
+        model_modes = Modes(l=l, n=n, f=f, inertia=inertia, error=None, dnu=dnu)
 
         h, plot_position = echelle(starfile, observed_modes.dnu)
 
