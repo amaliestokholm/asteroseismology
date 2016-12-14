@@ -61,8 +61,8 @@ def kjeldsen_corr(model_modes, observed_modes):
     # Kjeldsen correction
     # Correcting stellar oscillation frequencies for
     # near-surface effects, Kjeldsen et al., 2008
-    # bcor = 4.9  # from a solar model
-    nu0 = 1000
+    bcor = 4.9  # from a solar model
+    nu0 = 996
     print('kjeldsen')
     output = []
     llist = []
@@ -75,7 +75,7 @@ def kjeldsen_corr(model_modes, observed_modes):
     plt.xlabel(r'$\nu_{{model}}$ [$\mu$Hz]')
     plt.ylabel(r'$\nu-\nu_{{model}}$ [$\mu$Hz]')
     color = ['b', 'g', 'y', 'm']
-    ls_obs = [0]  # np.unique(l_obs)
+    ls_obs = np.unique(observed_modes.l)
     for l in ls_obs:
         print('l=%s' % l)
         angular_observed_modes = observed_modes.for_l(l=l)
@@ -99,15 +99,14 @@ def kjeldsen_corr(model_modes, observed_modes):
             inertias = inertia_nl / inertia_l0s
             inertialist.append(inertias)
         inertialist = np.asarray(inertialist)
-        #r = ((bcor - 1) *
-        #     (bcor * ((fnl_ref) / (fnl_obs)) - ((dnu) / (dnu_obs))) ** (-1))
-        r = 1
+        r = ((bcor - 1) *
+             (bcor * ((fnl_ref) / (fnl_obs)) - ((dnu) / (dnu_obs))) ** (-1))
 
-        bcor = ((r * ((dnu) / (dnu_obs)) - 1) *
-               ((r * ((fnl_ref) / (fnl_obs)) - 1) ** (-1)))
+        #bcor = ((r * ((dnu) / (dnu_obs)) - 1) *
+        #       ((r * ((fnl_ref) / (fnl_obs)) - 1) ** (-1)))
         acor = ((np.mean(fnl_obs) - r * np.mean(fnl_ref)) /
                (len(fnl_obs) ** (-1) * np.sum((fnl_obs / nu0) ** bcor)))
-        print(acor)
+        print('a=%s' % acor)
         f_corr = (fnl_ref + (1 / inertialist) * (acor / r) * (fnl_ref / nu0) ** bcor)
 
         output.append(f_corr)
