@@ -58,6 +58,11 @@ class Modes(ModesBase):
         return Modes(l=np.asarray(self.l), n=np.asarray(self.n), f=np.asarray(self.f),
                      inertia=np.asarray(self.inertia), dnu=np.asarray(self.dnu))
 
+    def f_as_dict(self):
+        keys = zip(self.n, self.l)
+        values = self.f
+        dictionary = dict(zip(keys, values))
+        return dictionary
 
 def kjeldsen_corr(model_modes, observed_modes):
     assert len(observed_modes.n)
@@ -126,11 +131,18 @@ def kjeldsen_corr(model_modes, observed_modes):
                mode="expand", borderaxespad=0., frameon=False)
     plt.savefig('./echelle/kjeldsen_%s.pdf' % (dnu), bbox_inches='tight')
     plt.close()
-    
+    print(chisqr(observed_modes, corrected_modes)) 
     return corrected_modes 
 
 
-def chisqr(f_obs, f_corr):
+def chisqr(observed_modes, corrected_modes):
+    observed_dictionary = observed_modes.f_as_dict()
+    corrected_dictionary = corrected_modes.f_as_dict()
+    nl_keys = sorted(observed_dictionary.keys() & corrected_dictionary.keys())
+
+    f_corr = np.asarray([corrected_dictionary[n, l] for (n,l) in nl_keys])
+    f_obs = np.asarray([observed_dictionary[n, l] for (n,l) in nl_keys])
+
     N = len(f_obs)
     sigma_f_obs = 1  # could be read from mikkelfreq and find median
     return ((1 / N) * np.sum(((f_corr - f_obs) /
