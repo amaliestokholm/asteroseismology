@@ -192,7 +192,7 @@ def overplot(job, starfile, obsfile, dnu_obs):
     nl0_obs = np.array(sorted(n_obs[l_obs == 0]))
 
     datafiles = sorted([s for s in os.listdir(dir) if s.startswith('obs')])
-    datafiles = datafiles[7:9]
+    # datafiles = datafiles[7:9]
     observed_modes = Modes(n=n_obs, l=l_obs, f=f_obs,
                            inertia=None, error=error_obs, dnu=dnu_obs)
     for i, datafile in enumerate(datafiles):
@@ -222,12 +222,12 @@ def overplot(job, starfile, obsfile, dnu_obs):
         plt.plot(*plot_position(fl0_obs[0]), 'd',
                  color=l0color, markersize=7,
                  label=r'lowest, closest $\nu_{{obs}}$ with $l=0$')
-        plt.plot(*plot_position(fl0), 'o', markersize=7,
-                 markeredgewidth=1, markeredgecolor=l0color,
-                 markerfacecolor='none', label=r'$\nu$ with $l=0$')
         plt.plot(*plot_position(corrected_modes.f),'*', markersize=7,
                  markeredgewidth=1, markeredgecolor=l0color,
                  markerfacecolor='none', label=r'$\nu_{corr}$ with $l=0$')
+        plt.plot(*plot_position(fl0), 'o', markersize=7,
+                 markeredgewidth=1, markeredgecolor=l0color,
+                 markerfacecolor='none', label=r'$\nu$ with $l=0$')
         plt.plot(*plot_position(fl0_obs), 'd', markersize=7,
                  markeredgewidth=1, markeredgecolor=l0color,
                  markerfacecolor='none', label=r'$\nu_{{obs}}$ with $l=0$')
