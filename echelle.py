@@ -83,17 +83,54 @@ class Modes(ModesBase):
                      inertia=inertia, error=error, dnu=np.asarray(self.dnu))
 
     def f_as_dict(self):
-        keys = zip(self.n, self.l)
-        values = self.f
-        dictionary = dict(zip(keys, values))
-        return dictionary
+        return self.attribute_as_dict('f')
 
+    def inertia_as_dict(self):
+        return self.attribute_as_dict('inertia')
 
     def error_as_dict(self):
+        return self.attribute_as_dict('error')
+
+    def attribute_as_dict(self, attribute):
         keys = zip(self.n, self.l)
-        values = self.error
+        values = getattr(self, attribute)
         dictionary = dict(zip(keys, values))
         return dictionary
+
+def BG14_corr(model_modes, observed_modes):
+    corrected_modes = Modes(l=[], n=[], f=[], inertia=[], error=None, dnu=model_modes.dnu)
+    observed_dictionary = observed_modes.f_as_dict()
+    model_dictionary = model_modes.f_as_dict()
+    nl_keys = sorted(observed_dictionary.keys() & model_dictionary.keys())
+
+    f_mod = np.asarray([model_dictionary[n, l] for (n,l) in nl_keys])
+    f_obs = np.asarray([observed_dictionary[n, l] for (n,l) in nl_keys])
+
+    N = len(f_obs)
+    y = np.zeros((N, 1))
+    matx = np.zeros((N, 2))
+    error_dict = observed_modes.error_as_dict()
+    errors = np.asarray([error_dict[n, l] for (n,l) in nl_keys])
+    inertia_dict = model_modes.inertia_as_dict()
+    q = np.asarray([inertia_dict[n, 0] for (n,l) in nl_keys])
+    inertia = np.asarray([inertia_dict[n, l] for (n,l) in nl_keys]) / q
+    y = (f_obs - f_mod) / errors
+    matx[:, 0] = f_mod ** (-1) / (inertia * errors)
+    matx[:, 1] = f_mod **  3 / (inertia * errors)
+
+    coeffs = np.linalg.lstsq(matx, y)[0]
+    df = (coeffs[0] * f_mod ** (-1) + coeffs[1] * f_mod ** 3) / inertia
+    f_corr = np.asarray(f_mod + df)
+    plt.figure()
+    fix_margins()
+    plt.xlabel(r'$\nu_{{model}}$ [$\mu$Hz]')
+    plt.ylabel(r'$\nu-\nu_{{model}}$ [$\mu$Hz]')
+    plt.plot(f_mod, (f_obs - f_mod), color='dodgerblue',
+             label=r'l=%s $\nu_{obs}-\nu_{mod}$'% 0, marker='d', linestyle='None')
+    plt.plot(f_mod, (f_corr - f_mod), color='dodgerblue',
+             label=r'l=%s $\nu_{corr}-\nu_{mod}$'% 0, marker='o', linestyle='None')
+    plt.show()
+    return corrected_modes
 
 
 def kjeldsen_corr(model_modes, observed_modes):
@@ -158,10 +195,9 @@ def kjeldsen_corr(model_modes, observed_modes):
         plt.plot(fnl_ref, (f_corr - fnl_ref), color=color[l],
                  label=r'l=%s $\nu_{corr}-\nu_{ref}$'% l, marker='o')
     corrected_modes = corrected_modes.asarray()
-    print(corrected_modes)
     plt.legend(bbox_to_anchor=(0., 1.02, 1., .102), loc=3, ncol=3,
                mode="expand", borderaxespad=0., frameon=False)
-    plt.savefig('./echelle/kjeldsen_%s.pdf' % (dnu), bbox_inches='tight')
+    plt.savefig('./echelle/amalie3_kjeldsen/kjeldsen_%s.pdf' % (dnu), bbox_inches='tight')
     plt.close()
     chisqr_value = chisqr(observed_modes, corrected_modes) 
     return corrected_modes, chisqr_value
@@ -204,7 +240,8 @@ def overplot(job, starfile, obsfile, dnu_obs):
         model_modes = Modes(l=l, n=n, f=f, inertia=inertia, error=None, dnu=dnu)
 
         h, plot_position = echelle(starfile, observed_modes.dnu)
-
+        coeffs = BG14_corr(model_modes, observed_modes)
+        """
         corrected_modes, chisqr = kjeldsen_corr(model_modes, observed_modes)
         chisqr_list.append(chisqr)
         fl0 = np.array(sorted(f[l == 0]))
@@ -236,10 +273,11 @@ def overplot(job, starfile, obsfile, dnu_obs):
         #         markerfacecolor='none', label=r'$\nu$ with $l=1$')
         plt.legend(bbox_to_anchor=(0., 1.02, 1., .102), loc=3, ncol=2,
                    mode="expand", borderaxespad=0., frameon=False)
-        plt.savefig('./echelle/%s/%s_echelle_%s_%s.pdf' %
+        plt.savefig('./echelle/%s/%s_echelle_%03d_%s.pdf' %
                     (job, starname, i, dnu), bbox_inches='tight')
         plt.close()
         print(closestfl0_list[i], n[closestfl0_list[i] == f], fl0_obs[0])
+        """
     minfl0 = min(closestfl0_list, key=lambda p: abs(p - fl0_obs[0]))
     minchisqr = min(chisqr_list)
     print(closestfl0_list.index(minfl0), minfl0, fl0_obs[0], chisqr_list.index(minchisqr), minchisqr)
@@ -291,4 +329,4 @@ def echelle(filename, delta_nu, save=None):
                     bbox_inches='tight')
     return h, plot_position
 
-overplot('amalie2', '181096.txt', 'mikkelfreq.txt', 53.8)
+overplot('amalie3', '181096.txt', 'mikkelfreq.txt', 53.8)
