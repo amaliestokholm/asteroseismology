@@ -274,7 +274,7 @@ def overplot(job, starfile, obsfile, dnu_obs):
         plt.plot(*plot_position(HK08_corrected_modes.f),'*', markersize=7,
                  markeredgewidth=1, markeredgecolor=l0color,
                  markerfacecolor='none', label=r'$\nu_{HK08 corr}$ with $l=0$')
-        plt.plot(*plot_position(BG14_corrected_modes.f),'s', markersize=7,
+        plt.plot(*plot_position(BG14_corrected_modes.f.for_l(l=0)),'s', markersize=7,
                  markeredgewidth=1, markeredgecolor=l0color,
                  markerfacecolor='none', label=r'$\nu_{BG14 corr}$ with $l=0$')
         plt.plot(*plot_position(fl0), 'o', markersize=7,
@@ -299,7 +299,7 @@ def overplot(job, starfile, obsfile, dnu_obs):
                  label=r'l=%s $\nu_{obs}-\nu_{mod}$'% 0, marker='d', linestyle='None')
         plt.plot(observed_modes.f, (HK08_corrected_modes.f - model_modes.f), color='dodgerblue',
                  label=r'l=%s $\nu_{HK08 corr}-\nu_{mod}$'% 0, marker='*', linestyle='None')
-        plt.plot(observed_modes.f, (BG14_corrected_modes.f - model_modes.f), color='dodgerblue',
+        plt.plot(observed_modes.f, (BG14_corrected_modes.f.for_l(l=0) - model_modes.f), color='dodgerblue',
                  label=r'l=%s $\nu_{BG14 corr}-\nu_{mod}$'% 0, marker='s', linestyle='None')
         plt.legend(bbox_to_anchor=(0., 1.02, 1., .102), loc=3, ncol=2,
                    mode="expand", borderaxespad=0., frameon=False)
