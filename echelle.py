@@ -122,6 +122,7 @@ def BG14_corr(model_modes, observed_modes):
     assert coeffs.shape == (2,)
     df = (coeffs[0] * f_mod ** (-1) + coeffs[1] * f_mod ** 3) / inertia
     f_corr = np.asarray(f_mod + df)
+    """
     plt.figure()
     fix_margins()
     plt.xlabel(r'$\nu_{{model}}$ [$\mu$Hz]')
@@ -131,6 +132,7 @@ def BG14_corr(model_modes, observed_modes):
     plt.plot(f_mod, (f_corr - f_mod), color='dodgerblue',
              label=r'l=%s $\nu_{corr}-\nu_{mod}$'% 0, marker='o', linestyle='None')
     plt.show()
+    """
     return corrected_modes
 
 
@@ -149,11 +151,13 @@ def kjeldsen_corr(model_modes, observed_modes):
     # nl0 = n[l == 0]
     radial_model_modes = model_modes.for_l(l=0)
 
+    """
     plt.figure()
     fix_margins()
     plt.xlabel(r'$\nu_{{model}}$ [$\mu$Hz]')
     plt.ylabel(r'$\nu-\nu_{{model}}$ [$\mu$Hz]')
     color = ['dodgerblue', 'limegreen', 'tomato', 'hotpink']
+    """
     ls_obs = [0]  # np.unique(observed_modes.l)
     for l in ls_obs:
         print('l=%s' % l)
@@ -191,15 +195,19 @@ def kjeldsen_corr(model_modes, observed_modes):
         f_corr = (fnl_ref + (1 / inertialist) * (acor / r) * (fnl_ref / nu0) ** bcor)
         corrected_modes.f.extend(f_corr)
         l = int(l)
+        """
         plt.plot(fnl_ref, (fnl_obs - fnl_ref), color=color[l],
                  label=r'l=%s $\nu_{obs}-\nu_{ref}$'% l, marker='d')
         plt.plot(fnl_ref, (f_corr - fnl_ref), color=color[l],
                  label=r'l=%s $\nu_{corr}-\nu_{ref}$'% l, marker='o')
+        """
     corrected_modes = corrected_modes.asarray()
+    """
     plt.legend(bbox_to_anchor=(0., 1.02, 1., .102), loc=3, ncol=3,
                mode="expand", borderaxespad=0., frameon=False)
     plt.savefig('./echelle/amalie3_kjeldsen/kjeldsen_%s.pdf' % (dnu), bbox_inches='tight')
     plt.close()
+    """
     chisqr_value = chisqr(observed_modes, corrected_modes) 
     return corrected_modes, chisqr_value
 
@@ -262,7 +270,7 @@ def overplot(job, starfile, obsfile, dnu_obs):
         plt.plot(*plot_position(HK08_corrected_modes.f),'*', markersize=7,
                  markeredgewidth=1, markeredgecolor=l0color,
                  markerfacecolor='none', label=r'$\nu_{HK08 corr}$ with $l=0$')
-        plt.plot(*plot_position(BG14_corrected_modes.f),'*', markersize=7,
+        plt.plot(*plot_position(BG14_corrected_modes.f),'s', markersize=7,
                  markeredgewidth=1, markeredgecolor=l0color,
                  markerfacecolor='none', label=r'$\nu_{BG14 corr}$ with $l=0$')
         plt.plot(*plot_position(fl0), 'o', markersize=7,
@@ -283,13 +291,17 @@ def overplot(job, starfile, obsfile, dnu_obs):
         fix_margins()
         plt.xlabel(r'$\nu_{{model}}$ [$\mu$Hz]')
         plt.ylabel(r'$\nu-\nu_{{model}}$ [$\mu$Hz]')
-        plt.plot(f_mod, (observed_modes.f - model_modes.f), color='dodgerblue',
+        plt.plot(observed_modes.f, (observed_modes.f - model_modes.f), color='dodgerblue',
                  label=r'l=%s $\nu_{obs}-\nu_{mod}$'% 0, marker='d', linestyle='None')
-        plt.plot(f_mod, (HK08_corrected_modes.f - model_modes.f), color='dodgerblue',
-                 label=r'l=%s $\nu_{corr}-\nu_{mod}$'% 0, marker='o', linestyle='None')
-        plt.plot(f_mod, (BG14_corrected_modes.f - model_modes.f), color='dodgerblue',
-                 label=r'l=%s $\nu_{corr}-\nu_{mod}$'% 0, marker='o', linestyle='None')
-        plt.show()
+        plt.plot(observed_modes.f, (HK08_corrected_modes.f - model_modes.f), color='dodgerblue',
+                 label=r'l=%s $\nu_{HK08 corr}-\nu_{mod}$'% 0, marker='*', linestyle='None')
+        plt.plot(observed_modes.f, (BG14_corrected_modes.f - model_modes.f), color='dodgerblue',
+                 label=r'l=%s $\nu_{BG14 corr}-\nu_{mod}$'% 0, marker='s', linestyle='None')
+        plt.legend(bbox_to_anchor=(0., 1.02, 1., .102), loc=3, ncol=2,
+                   mode="expand", borderaxespad=0., frameon=False)
+        plt.savefig('./echelle/%s/%s_correctionplot%03d_%s.pdf' %
+                    (job, starname, i, dnu), bbox_inches='tight')
+        plt.close()
         print(closestfl0_list[i], n[closestfl0_list[i] == f], fl0_obs[0])
     minfl0 = min(closestfl0_list, key=lambda p: abs(p - fl0_obs[0]))
     minchisqr = min(chisqr_list)
