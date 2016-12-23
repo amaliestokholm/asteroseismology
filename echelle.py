@@ -118,7 +118,10 @@ def BG14_corr(model_modes, observed_modes):
     matx[:, 0] = f_mod ** (-1) / (inertia * errors)
     matx[:, 1] = f_mod **  3 / (inertia * errors)
 
-    coeffs = np.linalg.lstsq(matx, y)
+    print(matx.shape)
+    print(y.shape)
+    coeffs = np.linalg.lstsq(matx, y)[0]
+    print(coeffs)
     assert coeffs.shape == (2,)
     df = (coeffs[0] * f_mod ** (-1) + coeffs[1] * f_mod ** 3) / inertia
     f_corr = np.asarray(f_mod + df)
