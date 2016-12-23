@@ -98,7 +98,7 @@ class Modes(ModesBase):
         return dictionary
 
 def BG14_corr(model_modes, observed_modes):
-    corrected_modes = Modes(l=[], n=[], f=[], inertia=[], error=None, dnu=model_modes.dnu)
+    corrected_modes = Modes(l=[], n=[], f=[], inertia=None, error=None, dnu=model_modes.dnu)
     observed_dictionary = observed_modes.f_as_dict()
     model_dictionary = model_modes.f_as_dict()
     error_dict = observed_modes.error_as_dict()
@@ -151,18 +151,41 @@ def kjeldsen_corr(model_modes, observed_modes):
     observed_dictionary = observed_modes.f_as_dict()
     model_dictionary = model_modes.f_as_dict()
     inertia_dict = model_modes.inertia_as_dict()
+    error_dict = observed_modes.error_as_dict()
     nl_keys = sorted(observed_dictionary.keys() & model_dictionary.keys())
+    N = len(nl_keys)
+
     dnu = model_modes.dnu
     dnu_obs = observed_modes.dnu
     corrected_modes = Modes(l=[], n=[], f=[], inertia=[], error=None, dnu=dnu)
-    radial_model_modes = model_modes.for_l(l=0)
 
+    f_mod = np.asarray([model_dictionary[n, l] for (n,l) in nl_keys])
+    f_obs = np.asarray([observed_dictionary[n, l] for (n,l) in nl_keys])
+    errors = np.asarray([error_dict[n, l] for (n,l) in nl_keys])
+    q = np.asarray([inertia_dict[n, 0] for (n,l) in nl_keys])
+    inertia = np.asarray([inertia_dict[n, l] for (n,l) in nl_keys]) / q
+    assert len(f_mod) == len(f_obs) == N
+
+
+    r = ((bcor - 1) *
+          (bcor * ((f_mod) / (f_obs)) - ((dnu) / (dnu_obs))) ** (-1))
+    #bcor = ((r * ((dnu) / (dnu_obs)) - 1) *        
+    #       ((r * ((f_mod) / (f_obs)) - 1) ** (-1)))
+    acor = ((np.mean(f_obs) - r * np.mean(f_mod)) /
+            (len(f_obs) ** (-1) * np.sum((f_obs / nu0) ** bcor)))
+    f_corr = (f_mod + (1 / inertia) * (acor / r) * (f_mod / nu0) ** bcor)
+    corrected_modes.f.extend(f_corr)
+    n, l = zip(*nl_keys)
+    corrected_modes.n.extend(n)
+    corrected_modes.l.extend(l)
     """
+    radial_model_modes = model_modes.for_l(l=0)
     plt.figure()
     fix_margins()
     plt.xlabel(r'$\nu_{{model}}$ [$\mu$Hz]')
     plt.ylabel(r'$\nu-\nu_{{model}}$ [$\mu$Hz]')
     color = ['dodgerblue', 'limegreen', 'tomato', 'hotpink']
+    """
     """
     ls_obs = [0]  # np.unique(observed_modes.l)
     for l in ls_obs:
@@ -199,13 +222,12 @@ def kjeldsen_corr(model_modes, observed_modes):
         f_corr = (fnl_ref + (1 / inertialist) * (acor / r) * (fnl_ref / nu0) ** bcor)
         corrected_modes.f.extend(f_corr)
         l = int(l)
-        """
         plt.plot(fnl_ref, (fnl_obs - fnl_ref), color=color[l],
                  label=r'l=%s $\nu_{obs}-\nu_{ref}$'% l, marker='d')
         plt.plot(fnl_ref, (f_corr - fnl_ref), color=color[l],
                  label=r'l=%s $\nu_{corr}-\nu_{ref}$'% l, marker='o')
-        """
     corrected_modes = corrected_modes.asarray()
+    """
     """
     plt.legend(bbox_to_anchor=(0., 1.02, 1., .102), loc=3, ncol=3,
                mode="expand", borderaxespad=0., frameon=False)
@@ -271,10 +293,10 @@ def overplot(job, starfile, obsfile, dnu_obs):
         plt.plot(*plot_position(fl0_obs[0]), 'd',
                  color=l0color, markersize=7,
                  label=r'lowest, closest $\nu_{{obs}}$ with $l=0$')
-        plt.plot(*plot_position(HK08_corrected_modes.f),'*', markersize=7,
+        plt.plot(*plot_position(HK08_corrected_modes.for_l(l=0).f),'*', markersize=7,
                  markeredgewidth=1, markeredgecolor=l0color,
                  markerfacecolor='none', label=r'$\nu_{HK08 corr}$ with $l=0$')
-        plt.plot(*plot_position(BG14_corrected_modes.f.for_l(l=0)),'s', markersize=7,
+        plt.plot(*plot_position(BG14_corrected_modes.for_l(l=0).f),'s', markersize=7,
                  markeredgewidth=1, markeredgecolor=l0color,
                  markerfacecolor='none', label=r'$\nu_{BG14 corr}$ with $l=0$')
         plt.plot(*plot_position(fl0), 'o', markersize=7,
@@ -295,11 +317,11 @@ def overplot(job, starfile, obsfile, dnu_obs):
         fix_margins()
         plt.xlabel(r'$\nu_{{model}}$ [$\mu$Hz]')
         plt.ylabel(r'$\nu-\nu_{{model}}$ [$\mu$Hz]')
-        plt.plot(observed_modes.f, (observed_modes.f - model_modes.f), color='dodgerblue',
+        plt.plot(observed_modes.f, (observed_modes.for_l(l=0).f - model_modes.for_l(l=0).f), color='dodgerblue',
                  label=r'l=%s $\nu_{obs}-\nu_{mod}$'% 0, marker='d', linestyle='None')
-        plt.plot(observed_modes.f, (HK08_corrected_modes.f - model_modes.f), color='dodgerblue',
+        plt.plot(observed_modes.f, (HK08_corrected_modes.for_l(l=0).f - model_modes.for_l(l=0).f), color='dodgerblue',
                  label=r'l=%s $\nu_{HK08 corr}-\nu_{mod}$'% 0, marker='*', linestyle='None')
-        plt.plot(observed_modes.f, (BG14_corrected_modes.f.for_l(l=0) - model_modes.f), color='dodgerblue',
+        plt.plot(observed_modes.f, (BG14_corrected_modes.f.for_l(l=0) - model_modes.for_l(l=0).f), color='dodgerblue',
                  label=r'l=%s $\nu_{BG14 corr}-\nu_{mod}$'% 0, marker='s', linestyle='None')
         plt.legend(bbox_to_anchor=(0., 1.02, 1., .102), loc=3, ncol=2,
                    mode="expand", borderaxespad=0., frameon=False)
