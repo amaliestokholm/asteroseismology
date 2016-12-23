@@ -118,13 +118,14 @@ def BG14_corr(model_modes, observed_modes):
     matx[:, 0] = f_mod ** (-1) / (inertia * errors)
     matx[:, 1] = f_mod **  3 / (inertia * errors)
 
-    print(matx.shape)
-    print(y.shape)
     coeffs = np.linalg.lstsq(matx, y)[0]
-    print(coeffs)
     assert coeffs.shape == (2,)
     df = (coeffs[0] * f_mod ** (-1) + coeffs[1] * f_mod ** 3) / inertia
     f_corr = np.asarray(f_mod + df)
+    corrected_modes.f.extend(f_corr)
+    n, l = zip(*nl_keys)
+    corrected_modes.n.extend(n)
+    corrected_modes.l.extend(l)
     """
     plt.figure()
     fix_margins()
@@ -140,18 +141,20 @@ def BG14_corr(model_modes, observed_modes):
 
 
 def kjeldsen_corr(model_modes, observed_modes):
-    assert len(observed_modes.n)
-    dnu = model_modes.dnu
-    dnu_obs = observed_modes.dnu
     # Kjeldsen correction
     # Correcting stellar oscillation frequencies for
     # near-surface effects, Kjeldsen et al., 2008
     bcor = 4.9  # from a solar model
     nu0 = 996
-    print('kjeldsen')
+
+    assert len(observed_modes.n)
+    observed_dictionary = observed_modes.f_as_dict()
+    model_dictionary = model_modes.f_as_dict()
+    inertia_dict = model_modes.inertia_as_dict()
+    nl_keys = sorted(observed_dictionary.keys() & model_dictionary.keys())
+    dnu = model_modes.dnu
+    dnu_obs = observed_modes.dnu
     corrected_modes = Modes(l=[], n=[], f=[], inertia=[], error=None, dnu=dnu)
-    # inertia_l0 = inertia[l == 0]
-    # nl0 = n[l == 0]
     radial_model_modes = model_modes.for_l(l=0)
 
     """
@@ -163,7 +166,6 @@ def kjeldsen_corr(model_modes, observed_modes):
     """
     ls_obs = [0]  # np.unique(observed_modes.l)
     for l in ls_obs:
-        print('l=%s' % l)
         angular_observed_modes = observed_modes.for_l(l=l)
         assert len(angular_observed_modes.n) == len(np.unique(angular_observed_modes.n))
     
@@ -194,7 +196,6 @@ def kjeldsen_corr(model_modes, observed_modes):
         #       ((r * ((fnl_ref) / (fnl_obs)) - 1) ** (-1)))
         acor = ((np.mean(fnl_obs) - r * np.mean(fnl_ref)) /
                (len(fnl_obs) ** (-1) * np.sum((fnl_obs / nu0) ** bcor)))
-        print('a=%s' % acor)
         f_corr = (fnl_ref + (1 / inertialist) * (acor / r) * (fnl_ref / nu0) ** bcor)
         corrected_modes.f.extend(f_corr)
         l = int(l)
