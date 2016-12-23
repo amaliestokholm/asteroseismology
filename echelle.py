@@ -101,24 +101,25 @@ def BG14_corr(model_modes, observed_modes):
     corrected_modes = Modes(l=[], n=[], f=[], inertia=[], error=None, dnu=model_modes.dnu)
     observed_dictionary = observed_modes.f_as_dict()
     model_dictionary = model_modes.f_as_dict()
+    error_dict = observed_modes.error_as_dict()
+    inertia_dict = model_modes.inertia_as_dict()
     nl_keys = sorted(observed_dictionary.keys() & model_dictionary.keys())
+    N = len(nl_keys)
 
     f_mod = np.asarray([model_dictionary[n, l] for (n,l) in nl_keys])
     f_obs = np.asarray([observed_dictionary[n, l] for (n,l) in nl_keys])
-
-    N = len(f_obs)
-    y = np.zeros((N, 1))
-    matx = np.zeros((N, 2))
-    error_dict = observed_modes.error_as_dict()
     errors = np.asarray([error_dict[n, l] for (n,l) in nl_keys])
-    inertia_dict = model_modes.inertia_as_dict()
     q = np.asarray([inertia_dict[n, 0] for (n,l) in nl_keys])
     inertia = np.asarray([inertia_dict[n, l] for (n,l) in nl_keys]) / q
+    assert len(f_mod) == len(f_obs) == N
+
+    matx = np.zeros((N, 2))
     y = (f_obs - f_mod) / errors
     matx[:, 0] = f_mod ** (-1) / (inertia * errors)
     matx[:, 1] = f_mod **  3 / (inertia * errors)
 
-    coeffs = np.linalg.lstsq(matx, y)[0]
+    coeffs = np.linalg.lstsq(matx, y)
+    assert coeffs.shape == (2,)
     df = (coeffs[0] * f_mod ** (-1) + coeffs[1] * f_mod ** 3) / inertia
     f_corr = np.asarray(f_mod + df)
     plt.figure()
@@ -240,9 +241,8 @@ def overplot(job, starfile, obsfile, dnu_obs):
         model_modes = Modes(l=l, n=n, f=f, inertia=inertia, error=None, dnu=dnu)
 
         h, plot_position = echelle(starfile, observed_modes.dnu)
-        coeffs = BG14_corr(model_modes, observed_modes)
-        """
-        corrected_modes, chisqr = kjeldsen_corr(model_modes, observed_modes)
+        BG14_corrected_modes = BG14_corr(model_modes, observed_modes)
+        HK08_corrected_modes, chisqr = kjeldsen_corr(model_modes, observed_modes)
         chisqr_list.append(chisqr)
         fl0 = np.array(sorted(f[l == 0]))
         nl0 = np.array(sorted(n[l == 0]))
@@ -259,9 +259,12 @@ def overplot(job, starfile, obsfile, dnu_obs):
         plt.plot(*plot_position(fl0_obs[0]), 'd',
                  color=l0color, markersize=7,
                  label=r'lowest, closest $\nu_{{obs}}$ with $l=0$')
-        plt.plot(*plot_position(corrected_modes.f),'*', markersize=7,
+        plt.plot(*plot_position(HK08_corrected_modes.f),'*', markersize=7,
                  markeredgewidth=1, markeredgecolor=l0color,
-                 markerfacecolor='none', label=r'$\nu_{corr}$ with $l=0$')
+                 markerfacecolor='none', label=r'$\nu_{HK08 corr}$ with $l=0$')
+        plt.plot(*plot_position(BG14_corrected_modes.f),'*', markersize=7,
+                 markeredgewidth=1, markeredgecolor=l0color,
+                 markerfacecolor='none', label=r'$\nu_{BG14 corr}$ with $l=0$')
         plt.plot(*plot_position(fl0), 'o', markersize=7,
                  markeredgewidth=1, markeredgecolor=l0color,
                  markerfacecolor='none', label=r'$\nu$ with $l=0$')
@@ -276,8 +279,18 @@ def overplot(job, starfile, obsfile, dnu_obs):
         plt.savefig('./echelle/%s/%s_echelle_%03d_%s.pdf' %
                     (job, starname, i, dnu), bbox_inches='tight')
         plt.close()
+        plt.figure()
+        fix_margins()
+        plt.xlabel(r'$\nu_{{model}}$ [$\mu$Hz]')
+        plt.ylabel(r'$\nu-\nu_{{model}}$ [$\mu$Hz]')
+        plt.plot(f_mod, (observed_modes.f - model_modes.f), color='dodgerblue',
+                 label=r'l=%s $\nu_{obs}-\nu_{mod}$'% 0, marker='d', linestyle='None')
+        plt.plot(f_mod, (HK08_corrected_modes.f - model_modes.f), color='dodgerblue',
+                 label=r'l=%s $\nu_{corr}-\nu_{mod}$'% 0, marker='o', linestyle='None')
+        plt.plot(f_mod, (BG14_corrected_modes.f - model_modes.f), color='dodgerblue',
+                 label=r'l=%s $\nu_{corr}-\nu_{mod}$'% 0, marker='o', linestyle='None')
+        plt.show()
         print(closestfl0_list[i], n[closestfl0_list[i] == f], fl0_obs[0])
-        """
     minfl0 = min(closestfl0_list, key=lambda p: abs(p - fl0_obs[0]))
     minchisqr = min(chisqr_list)
     print(closestfl0_list.index(minfl0), minfl0, fl0_obs[0], chisqr_list.index(minchisqr), minchisqr)
