@@ -157,7 +157,7 @@ def kjeldsen_corr(model_modes, observed_modes):
 
     dnu = model_modes.dnu
     dnu_obs = observed_modes.dnu
-    corrected_modes = Modes(l=[], n=[], f=[], inertia=[], error=None, dnu=dnu)
+    corrected_modes = Modes(l=[], n=[], f=[], inertia=None, error=None, dnu=dnu)
 
     f_mod = np.asarray([model_dictionary[n, l] for (n,l) in nl_keys])
     f_obs = np.asarray([observed_dictionary[n, l] for (n,l) in nl_keys])
@@ -266,25 +266,33 @@ def overplot(job, starfile, obsfile, dnu_obs):
     # datafiles = datafiles[7:9]
     observed_modes = Modes(n=n_obs, l=l_obs, f=f_obs,
                            inertia=None, error=error_obs, dnu=dnu_obs)
+    observed_dictionary = observed_modes.f_as_dict()
     for i, datafile in enumerate(datafiles):
         if i % 20 == 0:
             print(i)
         path = os.path.join(dir, datafile)
         l, n, f, inertia = np.loadtxt(path, usecols=(0, 1, 2, 3)).T
         dnu = np.median(np.diff(f[l == 0]))
-        model_modes = Modes(l=l, n=n, f=f, inertia=inertia, error=None, dnu=dnu)
 
+        model_modes = Modes(l=l, n=n, f=f, inertia=inertia, error=None, dnu=dnu)
+        model_dictionary = model_modes.f_as_dict()
+        nl_keys = sorted(observed_dictionary.keys() & model_dictionary.keys())
         h, plot_position = echelle(starfile, observed_modes.dnu)
+
         BG14_corrected_modes = BG14_corr(model_modes, observed_modes)
         HK08_corrected_modes, chisqr = kjeldsen_corr(model_modes, observed_modes)
         chisqr_list.append(chisqr)
-        fl0 = np.array(sorted(f[l == 0]))
         nl0 = np.array(sorted(n[l == 0]))
-        # closestfl0_index = (min(range(len(fl0)),
-        #                     key=lambda x: abs(fl0[x]-fl0_obs[0])))
-        # closestfl0_list[i] = fl0[closestfl0_index]
-        # closestfl0_list.append(min(fl0, key=lambda p: abs(p - fl0_obs[0])))
-        closestfl0_list.append(fl0[nl0 == nl0_obs[0]])
+        HK08_corr_dict = HK08_corrected_modes.f_as_dict()
+        BG14_corr_dict = BG14_corrected_modes.f_as_dict()
+        f_mod_l0 = np.asarray([model_dictionary[n, l] for (n,l) in nl_keys if l == 0])
+        f_obs_l0 = np.asarray([observed_dictionary[n,l] for (n,l) in nl_keys if l == 0])
+        f_HK08corr_l0 = np.asarray([HK08_corr_dict[n, l] for (n,l) in nl_keys if l == 0])
+        f_BG14corr_l0 = np.asarray([BG14_corr_dict[n, l] for (n,l) in nl_keys if l == 0])
+        print(model_dictionary[nl0_obs, 0])
+        closestfl0_list.append(np.asarray(model_dictionary[nl0_obs,0.0]))
+        print('print liste')
+        print(closestfl0_list)
         l0color = 'tomato'  # 'lightcoral'
         l1color = 'firebrick'  # 'crimson'
         plt.plot(*plot_position(closestfl0_list[i]), 'o',
@@ -299,7 +307,7 @@ def overplot(job, starfile, obsfile, dnu_obs):
         plt.plot(*plot_position(BG14_corrected_modes.for_l(l=0).f),'s', markersize=7,
                  markeredgewidth=1, markeredgecolor=l0color,
                  markerfacecolor='none', label=r'$\nu_{BG14 corr}$ with $l=0$')
-        plt.plot(*plot_position(fl0), 'o', markersize=7,
+        plt.plot(*plot_position(f_mod_l0), 'o', markersize=7,
                  markeredgewidth=1, markeredgecolor=l0color,
                  markerfacecolor='none', label=r'$\nu$ with $l=0$')
         plt.plot(*plot_position(fl0_obs), 'd', markersize=7,
@@ -317,11 +325,11 @@ def overplot(job, starfile, obsfile, dnu_obs):
         fix_margins()
         plt.xlabel(r'$\nu_{{model}}$ [$\mu$Hz]')
         plt.ylabel(r'$\nu-\nu_{{model}}$ [$\mu$Hz]')
-        plt.plot(observed_modes.f, (observed_modes.for_l(l=0).f - model_modes.for_l(l=0).f), color='dodgerblue',
+        plt.plot(f_obs_l0, (f_obs_l0 - f_mod_l0), color='dodgerblue',
                  label=r'l=%s $\nu_{obs}-\nu_{mod}$'% 0, marker='d', linestyle='None')
-        plt.plot(observed_modes.f, (HK08_corrected_modes.for_l(l=0).f - model_modes.for_l(l=0).f), color='dodgerblue',
+        plt.plot(f_obs_l0, (f_HK08corr_l0 - f_mod_l0 ), color='dodgerblue',
                  label=r'l=%s $\nu_{HK08 corr}-\nu_{mod}$'% 0, marker='*', linestyle='None')
-        plt.plot(observed_modes.f, (BG14_corrected_modes.f.for_l(l=0) - model_modes.for_l(l=0).f), color='dodgerblue',
+        plt.plot(f_obs_l0, (f_BG14corr_l0 - f_mod_l0), color='dodgerblue',
                  label=r'l=%s $\nu_{BG14 corr}-\nu_{mod}$'% 0, marker='s', linestyle='None')
         plt.legend(bbox_to_anchor=(0., 1.02, 1., .102), loc=3, ncol=2,
                    mode="expand", borderaxespad=0., frameon=False)
