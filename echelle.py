@@ -289,9 +289,7 @@ def overplot(job, starfile, obsfile, dnu_obs):
         f_obs_l0 = np.asarray([observed_dictionary[n,l] for (n,l) in nl_keys if l == 0])
         f_HK08corr_l0 = np.asarray([HK08_corr_dict[n, l] for (n,l) in nl_keys if l == 0])
         f_BG14corr_l0 = np.asarray([BG14_corr_dict[n, l] for (n,l) in nl_keys if l == 0])
-        print(model_dictionary[nl0_obs, 0])
-        closestfl0_list.append(np.asarray(model_dictionary[nl0_obs,0.0]))
-        print('print liste')
+        closestfl0_list.append(f_mod_l0[0])
         print(closestfl0_list)
         l0color = 'tomato'  # 'lightcoral'
         l1color = 'firebrick'  # 'crimson'
