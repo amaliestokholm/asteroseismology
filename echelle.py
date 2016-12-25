@@ -299,10 +299,10 @@ def overplot(job, starfile, obsfile, dnu_obs):
         plt.plot(*plot_position(fl0_obs[0]), 'd',
                  color=l0color, markersize=7,
                  label=r'lowest, closest $\nu_{{obs}}$ with $l=0$')
-        plt.plot(*plot_position(HK08_corrected_modes.for_l(l=0).f),'*', markersize=7,
+        plt.plot(*plot_position(f_HK08corr_l0),'*', markersize=7,
                  markeredgewidth=1, markeredgecolor=l0color,
                  markerfacecolor='none', label=r'$\nu_{HK08 corr}$ with $l=0$')
-        plt.plot(*plot_position(BG14_corrected_modes.for_l(l=0).f),'s', markersize=7,
+        plt.plot(*plot_position(f_BG14corr_l0),'s', markersize=7,
                  markeredgewidth=1, markeredgecolor=l0color,
                  markerfacecolor='none', label=r'$\nu_{BG14 corr}$ with $l=0$')
         plt.plot(*plot_position(f_mod_l0), 'o', markersize=7,
