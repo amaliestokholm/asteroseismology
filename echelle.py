@@ -321,17 +321,17 @@ def overplot(job, starfile, obsfile, dnu_obs):
         plt.close()
         plt.figure()
         fix_margins()
-        plt.xlabel(r'$\nu_{{model}}$ [$\mu$Hz]')
-        plt.ylabel(r'$\nu-\nu_{{model}}$ [$\mu$Hz]')
+        plt.xlabel(r'$\nu_{{obs}}$ [$\mu$Hz]')
+        plt.ylabel(r'$\nu_{obs}-\nu_{{mod}}$ [$\mu$Hz]')
         plt.plot(f_obs_l0, (f_obs_l0 - f_mod_l0), color='dodgerblue',
                  label=r'l=%s $\nu_{obs}-\nu_{mod}$'% 0, marker='d', linestyle='None')
-        plt.plot(f_obs_l0, (f_HK08corr_l0 - f_mod_l0 ), color='dodgerblue',
+        plt.plot(f_obs_l0, (f_obs_l0 - f_HK08corr_l0), color='dodgerblue',
                  label=r'l=%s $\nu_{HK08 corr}-\nu_{mod}$'% 0, marker='*', linestyle='None')
-        plt.plot(f_obs_l0, (f_BG14corr_l0 - f_mod_l0), color='dodgerblue',
+        plt.plot(f_obs_l0, (f_obs_l0 - f_BG14corr_l0), color='dodgerblue',
                  label=r'l=%s $\nu_{BG14 corr}-\nu_{mod}$'% 0, marker='s', linestyle='None')
         plt.legend(bbox_to_anchor=(0., 1.02, 1., .102), loc=3, ncol=2,
                    mode="expand", borderaxespad=0., frameon=False)
-        plt.savefig('./echelle/%s/%s_correctionplot%03d_%s.pdf' %
+        plt.savefig('./echelle/%s/correction/%s_correctionplot%03d_%s.pdf' %
                     (job, starname, i, dnu), bbox_inches='tight')
         plt.close()
         print(closestfl0_list[i], n[closestfl0_list[i] == f], fl0_obs[0])
@@ -386,4 +386,4 @@ def echelle(filename, delta_nu, save=None):
                     bbox_inches='tight')
     return h, plot_position
 
-overplot('amalie3', '181096.txt', 'mikkelfreq.txt', 53.8)
+overplot('amalie2', '181096.txt', 'mikkelfreq.txt', 53.8)
