@@ -326,9 +326,9 @@ def overplot(job, starfile, obsfile, dnu_obs):
         plt.plot(f_obs_l0, (f_obs_l0 - f_mod_l0), color='dodgerblue',
                  label=r'l=%s $\nu_{obs}-\nu_{mod}$'% 0, marker='d', linestyle='None')
         plt.plot(f_obs_l0, (f_obs_l0 - f_HK08corr_l0), color='dodgerblue',
-                 label=r'l=%s $\nu_{HK08 corr}-\nu_{mod}$'% 0, marker='*', linestyle='None')
+                 label=r'l=%s $\nu_{obs}-\nu_{HK08 corr}$'% 0, marker='*', linestyle='None')
         plt.plot(f_obs_l0, (f_obs_l0 - f_BG14corr_l0), color='dodgerblue',
-                 label=r'l=%s $\nu_{BG14 corr}-\nu_{mod}$'% 0, marker='s', linestyle='None')
+                 label=r'l=%s $\nu_{obs}-\nu_{BG14 corr}$'% 0, marker='s', linestyle='None')
         plt.legend(bbox_to_anchor=(0., 1.02, 1., .102), loc=3, ncol=2,
                    mode="expand", borderaxespad=0., frameon=False)
         plt.savefig('./echelle/%s/correction/%s_correctionplot%03d_%s.pdf' %
