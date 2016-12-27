@@ -109,9 +109,8 @@ def BG14_corr(model_modes, observed_modes):
     f_mod = np.asarray([model_dictionary[n, l] for (n,l) in nl_keys])
     f_obs = np.asarray([observed_dictionary[n, l] for (n,l) in nl_keys])
     errors = np.asarray([error_dict[n, l] for (n,l) in nl_keys])
-    q = np.asarray([inertia_dict[n, 0] for (n,l) in nl_keys])
-    inertia = np.asarray([inertia_dict[n, l] for (n,l) in nl_keys]) / q
-    assert len(f_mod) == len(f_obs) == N
+    inertia = np.asarray([inertia_dict[n, l] for (n,l) in nl_keys])
+    assert len(f_mod) == len(f_obs) == len(errors) == len(inertia) == N
 
     matx = np.zeros((N, 2))
     y = (f_obs - f_mod) / errors
@@ -120,23 +119,23 @@ def BG14_corr(model_modes, observed_modes):
 
     coeffs = np.linalg.lstsq(matx, y)[0]
     assert coeffs.shape == (2,)
+    print(coeffs)
+    print(sorted(inertia))
+    plt.figure()
+    plt.plot(sorted(inertia))
     df = (coeffs[0] * f_mod ** (-1) + coeffs[1] * f_mod ** 3) / inertia
     f_corr = np.asarray(f_mod + df)
     corrected_modes.f.extend(f_corr)
     n, l = zip(*nl_keys)
     corrected_modes.n.extend(n)
     corrected_modes.l.extend(l)
-    """
     plt.figure()
     fix_margins()
     plt.xlabel(r'$\nu_{{model}}$ [$\mu$Hz]')
     plt.ylabel(r'$\nu-\nu_{{model}}$ [$\mu$Hz]')
-    plt.plot(f_mod, (f_obs - f_mod), color='dodgerblue',
-             label=r'l=%s $\nu_{obs}-\nu_{mod}$'% 0, marker='d', linestyle='None')
-    plt.plot(f_mod, (f_corr - f_mod), color='dodgerblue',
-             label=r'l=%s $\nu_{corr}-\nu_{mod}$'% 0, marker='o', linestyle='None')
+    plt.scatter(f_mod, f_obs - f_mod, c=['rgb'[int(l)] for n, l in nl_keys])
+    plt.plot(f_mod, df, 'ko')
     plt.show()
-    """
     return corrected_modes
 
 
@@ -316,13 +315,13 @@ def overplot(job, starfile, obsfile, dnu_obs):
         #         markerfacecolor='none', label=r'$\nu$ with $l=1$')
         plt.legend(bbox_to_anchor=(0., 1.02, 1., .102), loc=3, ncol=2,
                    mode="expand", borderaxespad=0., frameon=False)
-        plt.savefig('./echelle/%s/%s_echelle_%03d_%s.pdf' %
+        plt.savefig('./echelle/%s/echelle/%s_echelle_%03d_%s.pdf' %
                     (job, starname, i, dnu), bbox_inches='tight')
         plt.close()
         plt.figure()
         fix_margins()
-        plt.xlabel(r'$\nu_{{obs}}$ [$\mu$Hz]')
-        plt.ylabel(r'$\nu_{obs}-\nu_{{mod}}$ [$\mu$Hz]')
+        plt.xlabel(r'$\nu_{{obs}}$ / $\mu$Hz')
+        plt.ylabel(r'$\nu_{obs}-\nu_{{mod}}$ / $\mu$Hz')
         plt.plot(f_obs_l0, (f_obs_l0 - f_mod_l0), color='dodgerblue',
                  label=r'l=%s $\nu_{obs}-\nu_{mod}$'% 0, marker='d', linestyle='None')
         plt.plot(f_obs_l0, (f_obs_l0 - f_HK08corr_l0), color='dodgerblue',
@@ -369,8 +368,8 @@ def echelle(filename, delta_nu, save=None):
 
     h = plt.figure()
     fix_margins()
-    plt.xlabel(r'Frequency mod $\Delta\nu -\Delta\nu/2$ with $\Delta\nu=$ %s [$\mu$Hz]' % dnu)
-    plt.ylabel(r'Frequency [$\mu$Hz]')
+    plt.xlabel(r'Frequency mod $\Delta\nu -\Delta\nu/2$ with $\Delta\nu=$ %s / $\mu$Hz' % dnu)
+    plt.ylabel(r'Frequency / $\mu$Hz')
     # Subtract half a pixel in order for data points to show up
     # in the middle of the pixel instead of in the lower left corner.
     plt.xlim([-fres/2, dnu-fres/2])
@@ -386,4 +385,4 @@ def echelle(filename, delta_nu, save=None):
                     bbox_inches='tight')
     return h, plot_position
 
-overplot('amalie2', '181096.txt', 'mikkelfreq.txt', 53.8)
+overplot('amalie3', '181096.txt', 'mikkelfreq.txt', 53.8)
