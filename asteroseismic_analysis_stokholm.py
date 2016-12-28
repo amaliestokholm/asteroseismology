@@ -88,7 +88,6 @@ from scipy.optimize import curve_fit
 from time import time as now
 import matplotlib
 
-
 def matplotlib_setup():
     """ The setup, which makes nice plots for the report"""
     fig_width_pt = 328
@@ -104,11 +103,19 @@ def matplotlib_setup():
     matplotlib.rc('legend', fontsize=8)
     matplotlib.rc('xtick', labelsize=8)
     matplotlib.rc('ytick', labelsize=8)
-    matplotlib.rc('text.latex', preamble=
-                  r'\usepackage[T1]{fontenc}\usepackage{lmodern}')
+    matplotlib.rc('text.latex',
+                  preamble=r'\usepackage[T1]{fontenc}\usepackage{lmodern}')
+
 
 matplotlib_setup()
+
 import matplotlib.pyplot as plt
+
+
+def fix_margins():
+    plt.subplots_adjust(left=0.12, right=0.95, bottom=0.15, top=0.95)
+
+    
 import plots
 
 import kicdata as kic
@@ -765,32 +772,33 @@ def plot_ps():
     freq = freq[filt]
     spower = spower[filt]
 
-    peak, height = echelle(delta_nu, freq, spower)
+    #peak, height = echelle(delta_nu, freq, spower)
 
     plt.figure()
-    plt.plot(freq, spower, 'k', linewidth=1)
+    fix_margins()
+    color = 'dodgerblue'
+    plt.plot(freq, spower, c=color, linewidth=1)
     #plt.plot(peak, height, 'ro')
-    """
-    n, l, f = np.loadtxt('10005473fre.txt', skiprows=1, usecols=(0, 1, 2, )).T
+
+    #n, l, f = np.loadtxt('10005473fre.txt', skiprows=1, usecols=(0, 1, 2, )).T
     #timpeak = np.loadtxt('181096.pkb', usecols=(2,)).T
-    #amaliepeak = np.loadtxt('181096.txt', usecols=(2,)).T
-    plt.plot(f, np.ones(len(f)) * 2, 'bo')
-    plt.plot(peak, np.ones(len(peak)) * 2.5, 'ro')
+    amaliepeak = np.loadtxt('mikkelfreq.txt', usecols=(2,)).T
+    # plt.plot(f, np.ones(len(f)) * 2, 'bo')
+    plt.plot(amaliepeak, np.ones(len(amaliepeak)) * 0.1, 'ro')
     
-    for freq in f:
-        plt.axvline(x=freq, color='b', linestyle='-')
-    for peak in amaliepeak:
-        plt.axvline(x=peak, color='r', linestyle='-')
+    # for freq in f:
+    #    plt.axvline(x=freq, color='b', linestyle='-')
+    #for peak in amaliepeak:
+    #    plt.axvline(x=peak, color='r', linestyle='-')
     
     plt.xlim([minimum, maximum])
     # plt.title(r'The power spectrum of %s' % starname)
     plt.xlabel(r'Frequency [$\mu$Hz]')
     plt.ylabel(r'Power [ppm$^2$]')
-    plt.savefig('zoom_cps%s_%s_%s_min_%smax_%s.pdf' %
+    plt.savefig('zoom_cps%s_%s_%s_min_%smax_%s.png' %
                 (starname, minfreq, maxfreq, minimum, maximum))
     plt.show()
-    """
-    print(np.transpose([peak, np.round((peak/delta_nu)-1)]))
+    #print(np.transpose([peak, np.round((peak/delta_nu)-1)]))
 
 
 # Make an Échelle diagram

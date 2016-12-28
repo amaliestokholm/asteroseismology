@@ -109,7 +109,7 @@ def BG14_corr(model_modes, observed_modes):
     f_mod = np.asarray([model_dictionary[n, l] for (n,l) in nl_keys])
     f_obs = np.asarray([observed_dictionary[n, l] for (n,l) in nl_keys])
     errors = np.asarray([error_dict[n, l] for (n,l) in nl_keys])
-    inertia = np.asarray([inertia_dict[n, l] for (n,l) in nl_keys])
+    inertia = 4 * np.pi * np.asarray([inertia_dict[n, l] for (n,l) in nl_keys])
     assert len(f_mod) == len(f_obs) == len(errors) == len(inertia) == N
 
     matx = np.zeros((N, 2))
@@ -119,16 +119,19 @@ def BG14_corr(model_modes, observed_modes):
 
     coeffs = np.linalg.lstsq(matx, y)[0]
     assert coeffs.shape == (2,)
+    """
     print(coeffs)
     print(sorted(inertia))
     plt.figure()
     plt.plot(sorted(inertia))
+    """
     df = (coeffs[0] * f_mod ** (-1) + coeffs[1] * f_mod ** 3) / inertia
     f_corr = np.asarray(f_mod + df)
     corrected_modes.f.extend(f_corr)
     n, l = zip(*nl_keys)
     corrected_modes.n.extend(n)
     corrected_modes.l.extend(l)
+    """
     plt.figure()
     fix_margins()
     plt.xlabel(r'$\nu_{{model}}$ [$\mu$Hz]')
@@ -136,7 +139,20 @@ def BG14_corr(model_modes, observed_modes):
     plt.scatter(f_mod, f_obs - f_mod, c=['rgb'[int(l)] for n, l in nl_keys])
     plt.plot(f_mod, df, 'ko')
     plt.show()
+    """
     return corrected_modes
+
+def chi(r, a, b, f_mod, f_obs, inertia, errors):
+    f_corr = (f_mod + (1 / inertia) * (a / r) * (f_mod / nu0) ** b)
+    return np.mean(((f_corr - f_obs) / (errors)) ** 2)
+
+def chilist(r_list, a_list, b, f_mod, f_obs, inertia, errors):
+    for r, a in zip(r_list, a_list):
+        chisqr = (r, a, b, f_mod, f_obs, inertia, errors)
+        chisqr_list.append(chisqr)
+
+    minindex = np.argmin(chisqr_list)
+    return r_list[minindex], a_list[minindex]
 
 
 def kjeldsen_corr(model_modes, observed_modes):
@@ -161,18 +177,22 @@ def kjeldsen_corr(model_modes, observed_modes):
     f_mod = np.asarray([model_dictionary[n, l] for (n,l) in nl_keys])
     f_obs = np.asarray([observed_dictionary[n, l] for (n,l) in nl_keys])
     errors = np.asarray([error_dict[n, l] for (n,l) in nl_keys])
-    q = np.asarray([inertia_dict[n, 0] for (n,l) in nl_keys])
-    inertia = np.asarray([inertia_dict[n, l] for (n,l) in nl_keys]) / q
+    # q = np.asarray([inertia_dict[n, 0] for (n,l) in nl_keys])
+    # inertia = np.asarray([inertia_dict[n, l] for (n,l) in nl_keys]) / q
+    inertia = np.asarray([inertia_dict[n, l] / inertia_dict[n, 0]
+                          for n, l in nl_keys])
     assert len(f_mod) == len(f_obs) == N
 
 
-    r = ((bcor - 1) *
-          (bcor * ((f_mod) / (f_obs)) - ((dnu) / (dnu_obs))) ** (-1))
+    r_list = ((bcor - 1) /
+          (bcor * ((f_mod) / (f_obs)) - ((dnu) / (dnu_obs))))
     #bcor = ((r * ((dnu) / (dnu_obs)) - 1) *        
     #       ((r * ((f_mod) / (f_obs)) - 1) ** (-1)))
-    acor = ((np.mean(f_obs) - r * np.mean(f_mod)) /
+    a_list = ((np.mean(f_obs) - r * np.mean(f_mod)) /
             (len(f_obs) ** (-1) * np.sum((f_obs / nu0) ** bcor)))
-    f_corr = (f_mod + (1 / inertia) * (acor / r) * (f_mod / nu0) ** bcor)
+    rcor, acor = chilist(r_list, a_list, bcor, f_mod, f_obs, inertia, errors)
+    f_corr = (f_mod + (1 / inertia) * 
+              (acor / rcor) * (f_mod / nu0) ** bcor)
     corrected_modes.f.extend(f_corr)
     n, l = zip(*nl_keys)
     corrected_modes.n.extend(n)
@@ -385,4 +405,4 @@ def echelle(filename, delta_nu, save=None):
                     bbox_inches='tight')
     return h, plot_position
 
-overplot('amalie3', '181096.txt', 'mikkelfreq.txt', 53.8)
+overplot('amalie2', '181096.txt', 'mikkelfreq.txt', 53.8)
