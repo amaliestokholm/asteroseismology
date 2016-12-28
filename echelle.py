@@ -147,6 +147,7 @@ def chi(r, a, b, f_mod, f_obs, inertia, errors, nu0):
     return np.mean(((f_corr - f_obs) / (errors)) ** 2)
 
 def chilist(r_list, a_list, *args):
+    chisqr_list = []
     for r, a in zip(r_list, a_list):
         chisqr = chi(r, a, *args)
         chisqr_list.append(chisqr)
