@@ -142,13 +142,13 @@ def BG14_corr(model_modes, observed_modes):
     """
     return corrected_modes
 
-def chi(r, a, b, f_mod, f_obs, inertia, errors):
+def chi(r, a, b, f_mod, f_obs, inertia, errors, nu0):
     f_corr = (f_mod + (1 / inertia) * (a / r) * (f_mod / nu0) ** b)
     return np.mean(((f_corr - f_obs) / (errors)) ** 2)
 
-def chilist(r_list, a_list, b, f_mod, f_obs, inertia, errors):
+def chilist(r_list, a_list, *args):
     for r, a in zip(r_list, a_list):
-        chisqr = (r, a, b, f_mod, f_obs, inertia, errors)
+        chisqr = chi(r, a, *args)
         chisqr_list.append(chisqr)
 
     minindex = np.argmin(chisqr_list)
@@ -188,7 +188,7 @@ def kjeldsen_corr(model_modes, observed_modes):
           (bcor * ((f_mod) / (f_obs)) - ((dnu) / (dnu_obs))))
     #bcor = ((r * ((dnu) / (dnu_obs)) - 1) *        
     #       ((r * ((f_mod) / (f_obs)) - 1) ** (-1)))
-    a_list = ((np.mean(f_obs) - r * np.mean(f_mod)) /
+    a_list = ((np.mean(f_obs) - r_list * np.mean(f_mod)) /
             (len(f_obs) ** (-1) * np.sum((f_obs / nu0) ** bcor)))
     rcor, acor = chilist(r_list, a_list, bcor, f_mod, f_obs, inertia, errors)
     f_corr = (f_mod + (1 / inertia) * 
