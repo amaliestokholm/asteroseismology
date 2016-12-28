@@ -147,13 +147,27 @@ def chi(r, a, b, f_mod, f_obs, inertia, errors, nu0):
     return np.mean(((f_corr - f_obs) / (errors)) ** 2)
 
 def chilist(r_list, a_list, *args):
-    chisqr_list = []
-    for r, a in zip(r_list, a_list):
-        chisqr = chi(r, a, *args)
-        chisqr_list.append(chisqr)
+    # chisqr_list = []
+    # for r, a in zip(r_list, a_list):
+    #     chisqr = chi(r, a, *args)
+    #     chisqr_list.append(chisqr)
 
-    minindex = np.argmin(chisqr_list)
-    return r_list[minindex], a_list[minindex]
+    # minindex = np.argmin(chisqr_list)
+    # return r_list[minindex], a_list[minindex]
+
+    def key(o):
+        r, a = o
+        return chi(r, a, *args)
+
+    return min(zip(r_list, a_list), key=key)
+
+
+def chi_optimize(r, a, *args):
+    def key(o):
+        r, a = o
+        return chi(r, a, *args)
+    res = scipy.optimize.minimize(key, (r,a), options={'disp':True}, method='Nelder-Mead')
+    return tuple(res.x)
 
 
 def kjeldsen_corr(model_modes, observed_modes):
@@ -191,7 +205,10 @@ def kjeldsen_corr(model_modes, observed_modes):
     #       ((r * ((f_mod) / (f_obs)) - 1) ** (-1)))
     a_list = ((np.mean(f_obs) - r_list * np.mean(f_mod)) /
             (len(f_obs) ** (-1) * np.sum((f_obs / nu0) ** bcor)))
-    rcor, acor = chilist(r_list, a_list, bcor, f_mod, f_obs, inertia, errors)
+    rcor, acor = chilist(r_list, a_list, bcor, f_mod, f_obs, inertia, errors, nu0)
+    print('Before calling minimizer:', rcor, acor)
+    rcor, acor = chi_optimize(rcor, acor, bcor, f_mod, f_obs, inertia, errors, nu0)
+    print('After calling minimizer:', rcor, acor)
     f_corr = (f_mod + (1 / inertia) * 
               (acor / rcor) * (f_mod / nu0) ** bcor)
     corrected_modes.f.extend(f_corr)
