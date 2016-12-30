@@ -165,7 +165,9 @@ def chilist(r_list, a_list, *args):
 def chi_optimize(r, a, *args):
     def key(o):
         r, a = o
-        return chi(r, a, *args)
+        # Regularization: force r to be close to 1
+        c = 10**6
+        return chi(r, a, *args) + c * (r-1)**2
     res = scipy.optimize.minimize(key, (r,a), options={'disp':True}, method='Nelder-Mead')
     return tuple(res.x)
 
@@ -423,4 +425,4 @@ def echelle(filename, delta_nu, save=None):
                     bbox_inches='tight')
     return h, plot_position
 
-overplot('amalie2', '181096.txt', 'mikkelfreq.txt', 53.8)
+overplot('amalie3', '181096.txt', 'mikkelfreq.txt', 53.8)
