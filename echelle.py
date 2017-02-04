@@ -140,7 +140,7 @@ def BG14_corr(model_modes, observed_modes):
     plt.plot(f_mod, df, 'ko')
     plt.show()
     """
-    return corrected_modes
+    return corrected_modes, coeffs
 
 def chi(r, a, b, f_mod, f_obs, inertia, errors, nu0):
     f_corr = (f_mod + (1 / inertia) * (a / r) * (f_mod / nu0) ** b)
@@ -166,10 +166,17 @@ def chi_optimize(r, a, *args):
     def key(o):
         r, a = o
         # Regularization: force r to be close to 1
-        c = 10**6
-        return chi(r, a, *args) + c * (r-1)**2
+        return chi(r, a, *args) + reg(r)
+
+    def reg(r):
+        c = 0  # 10**4
+        return c * (r-1)**2
+
+    print('Before optimize: chi', chi(r, a, *args), 'Regularization', reg(r))
     res = scipy.optimize.minimize(key, (r,a), options={'disp':True}, method='Nelder-Mead')
-    return tuple(res.x)
+    r, a = res.x
+    print('After optimize: chi', chi(r, a, *args), 'Regularization', reg(r))
+    return r, a
 
 
 def kjeldsen_corr(model_modes, observed_modes):
@@ -318,7 +325,7 @@ def overplot(job, starfile, obsfile, dnu_obs):
         nl_keys = sorted(observed_dictionary.keys() & model_dictionary.keys())
         h, plot_position = echelle(starfile, observed_modes.dnu)
 
-        BG14_corrected_modes = BG14_corr(model_modes, observed_modes)
+        BG14_corrected_modes, coeffs  = BG14_corr(model_modes, observed_modes)
         HK08_corrected_modes, chisqr = kjeldsen_corr(model_modes, observed_modes)
         chisqr_list.append(chisqr)
         nl0 = np.array(sorted(n[l == 0]))
@@ -368,6 +375,7 @@ def overplot(job, starfile, obsfile, dnu_obs):
                  label=r'l=%s $\nu_{obs}-\nu_{HK08 corr}$'% 0, marker='*', linestyle='None')
         plt.plot(f_obs_l0, (f_obs_l0 - f_BG14corr_l0), color='dodgerblue',
                  label=r'l=%s $\nu_{obs}-\nu_{BG14 corr}$'% 0, marker='s', linestyle='None')
+        plt.plot(f_obs_l0, coeffs[0] * f_mod_l0 ** (-1) + coeffs[1] * f_mod_l0 ** (3))
         plt.legend(bbox_to_anchor=(0., 1.02, 1., .102), loc=3, ncol=2,
                    mode="expand", borderaxespad=0., frameon=False)
         plt.savefig('./echelle/%s/correction/%s_correctionplot%03d_%s.pdf' %
