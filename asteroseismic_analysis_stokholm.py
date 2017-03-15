@@ -350,8 +350,6 @@ def background(nu_max):
     guess_tau_0 = [1 / nu_max, 1 / (nu_max +10)]
     guess_sigma_1 = [np.sqrt(np.mean(powerden ** 2)), np.sqrt(np.mean(powerden ** 2)) +1]
     guess_tau_1 = [1 / nu_max, 1 / (nu_max +10)]
-    print('Guessing values are: %f, %f, %f, %f' % (guess_sigma_0, 
-        guess_tau_0, guess_sigma_1, guess_tau_1))
 
     # Eq. 1 in mentioned paper
     def background_fit_2(nu, sigma_0, tau_0):
@@ -360,21 +358,29 @@ def background(nu_max):
                (2 * np.pi * nu * tau_0) ** 4))
         return k1
 
-    def background_fit(nu, sigma_0, tau_0, sigma_1, tau_1):
+    def background_fit(nu, sigma_0, tau_0, sigma_1, tau_1, P_n):
         k1 = background_fit_2(nu, sigma_0, tau_0)
         k2 = background_fit_2(nu, sigma_1, tau_1)
         return P_n + k1 + k2
 
-    def logbackground_fit(nu, sigma_0, tau_0, sigma_1, tau_1):
+    def logbackground_fit(nu, sigma_0, tau_0, sigma_1, tau_1, P_n):
         assert nu.all() > 0
         assert np.all(np.isfinite(nu)) == True
 
-        xs = background_fit(nu, sigma_0, tau_0, sigma_1, tau_1)
+        xs = background_fit(nu, sigma_0, tau_0, sigma_1, tau_1, P_n)
         invalid = xs <= 0
         xs[invalid] = 1
         log_xs = np.log10(xs)
         log_xs[invalid] = -10000  # return a very low number for log of something negative
         return log_xs
+    
+    def gridsearch(f, xs, ys, params):
+        # Save l2-norm in a dictionary for the tuple of chosen parameters
+        score = {}
+        for p in itertools.product(*params):
+            zs = f(xs, *p)
+            score[p] = np.mean((ys- zs) ** 2)
+        return min(score.keys(), key=lambda p: score[p])
 
     # Cut out around the signals in order not to overfit them
     minimum = 650
@@ -384,14 +390,13 @@ def background(nu_max):
     freq_filt = freq[~filt]
     powerden_filt = powerden[~filt]
     
-    print('Guessing values are: %f, %f, %f, %f' % (guess_sigma_0, 
-        guess_tau_0, guess_sigma_1, guess_tau_1))
-
     # Fit
-    z0 = [guess_sigma_0, guess_tau_0, guess_sigma_1, guess_tau_1]
-    np.savez_compressed('data.npz', freq_filt, powerden_filt, z0)
-    popt, pcov = curve_fit(logbackground_fit, freq_filt,
-                           np.log10(powerden_filt), p0=z0, maxfev=10000)
+    #z0 = [guess_sigma_0, guess_tau_0, guess_sigma_1, guess_tau_1]
+    #popt, pcov = curve_fit(logbackground_fit, freq_filt,
+    #                       np.log10(powerden_filt), p0=z0, maxfev=10000)
+
+    z0 = [guess_sigma_0, guess_tau_0, guess_sigma_1, guess_tau_1, P_n]
+    popt = gridsearch(logbackground_fit, freq_filt, np.log10(powerden_filt), z0)
 
     plt.figure()
     plt.loglog(freq, powerden, 'k', basex=10, basey=10, linewidth=0.1)
