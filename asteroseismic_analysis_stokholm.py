@@ -72,12 +72,12 @@ nmsigma = 7500
 ac_minheight = 0.15
 ac_comparorder = 700
 dv = 10
-nu_max_guess = 1000
+nu_max_guess = 996
 
-frequencies_from = None and (
-    '/home/amalie/Dropbox/Uddannelse/UNI/1516 - fysik 3. år/' +
-    'Bachelorprojekt/asteroseismology/data/181096/' +
-    'min5_max8490/powerdensity_q1_s4_k801_c1.npz')
+frequencies_from = None #and (
+    #'/home/amalie/Dropbox/Uddannelse/UNI/1516 - fysik 3. år/' +
+    #'Bachelorprojekt/asteroseismology/data/181096/' +
+    #'min5_max8490/powerdensity_q1_s4_k801_c1.npz')
 
 # Import the modules
 import os
@@ -176,8 +176,8 @@ def make_the_timeseries():
     print('Read and filter data')
     # Load data from the star
     time, flux = kic.getdata(ID, kernelsize, quarter, sigma, noisecut)
-    time = time[:((len(time)+1)//2)]
-    flux = flux[:((len(flux)+1)//2)]
+    #time = time[:((len(time)+1)//2)]
+    #flux = flux[:((len(flux)+1)//2)]
     assert len(time) == len(flux)
 
     # Calculate and print Nyquist-frequency
@@ -265,7 +265,7 @@ def smooth_power_spectrum():
     freq, power = loadnpz(ps).T
 
     # Run Gaussian filter
-    smooth_data = scipy.ndimage.gaussian_filter1d(power, gausssigma)
+    smooth_data = scipy.ndimage.gaussian_filter1d(power, sigma=gausssigma)
 
     # Cut the power spectrum in order to view the oscillations in plots
     freqfilt = freq > 12
@@ -321,7 +321,7 @@ def power_density_spectrum():
     plt.figure()
     plt.plot(freq, powerden, 'k', linewidth=0.1)
     plt.xlabel(r'Frequency [$\mu$Hz]')
-    plt.ylabel(r'Power density [ppm$^2\, \mu$Hz^{-1}$]')
+    plt.ylabel(r'Power density [ppm$^2\,\mu$Hz$^{-1}$]')
     plt.xlim([np.amin(freq), np.amax(freq)])
     plots.plot_margins()
     plt.savefig('%s_powerden_%s_%s.pdf' % (starname, minfreq, maxfreq))
@@ -344,12 +344,14 @@ def background(nu_max):
     """
     # Load data
     freq, powerden = loadnpz(pds).T
-
-    P_n = np.mean(powerden[-1500:-1])
+    
+    P_n = np.mean(powerden[freq > 2200])
     guess_sigma_0 = np.sqrt(np.mean(powerden ** 2))
     guess_tau_0 = 1 / nu_max
     guess_sigma_1 = np.sqrt(np.mean(powerden ** 2))
     guess_tau_1 = 1 / nu_max
+    print('Guessing values are: %f, %f, %f, %f' % (guess_sigma_0, 
+        guess_tau_0, guess_sigma_1, guess_tau_1))
 
     # Eq. 1 in mentioned paper
     def background_fit_2(nu, sigma_0, tau_0):
@@ -364,20 +366,32 @@ def background(nu_max):
         return P_n + k1 + k2
 
     def logbackground_fit(nu, sigma_0, tau_0, sigma_1, tau_1):
-        return np.log10(background_fit(nu, sigma_0, tau_0, sigma_1, tau_1))
+        assert nu.all() > 0
+        assert np.all(np.isfinite(nu)) == True
+
+        xs = background_fit(nu, sigma_0, tau_0, sigma_1, tau_1)
+        invalid = xs <= 0
+        xs[invalid] = 1
+        log_xs = np.log10(xs)
+        log_xs[invalid] = -10000  # return a very low number for log of something negative
+        return log_xs
 
     # Cut out around the signals in order not to overfit them
-    minimum = 600
-    maximum = 1050
+    minimum = 650
+    maximum = 1350
 
     filt = (freq > minimum) & (freq < maximum)
     freq_filt = freq[~filt]
     powerden_filt = powerden[~filt]
+    
+    print('Guessing values are: %f, %f, %f, %f' % (guess_sigma_0, 
+        guess_tau_0, guess_sigma_1, guess_tau_1))
 
     # Fit
     z0 = [guess_sigma_0, guess_tau_0, guess_sigma_1, guess_tau_1]
+    np.savez_compressed('data.npz', freq_filt, powerden_filt, z0)
     popt, pcov = curve_fit(logbackground_fit, freq_filt,
-                           np.log10(powerden_filt), p0=z0)
+                           np.log10(powerden_filt), p0=z0, maxfev=10000)
 
     plt.figure()
     plt.loglog(freq, powerden, 'k', basex=10, basey=10, linewidth=0.1)
@@ -718,11 +732,11 @@ def scalingrelation():
     s_nu_max_sun = 30
     s_delta_nu_sun = 0.1
     # From the litterature
-    # T_eff = 6347
-    # s_teff = 46
+    T_eff = 6347
+    s_teff = 46
     # From the interferometric analysis
-    T_eff = 6211
-    s_teff = 91
+    #T_eff = 6211
+    #s_teff = 91
     # From half the timeseries
     s_nmax = 4
     s_dn = 0.2
@@ -834,12 +848,12 @@ def echelle(delta_nu, freq, power):
 
 if __name__ == "__main__":
     # Here the functions are called
-    #make_the_timeseries()
+    make_the_timeseries()
     #make_the_power_spectrum()
     #smooth_power_spectrum()
     #power_density_spectrum()
     #background(nu_max_guess)
     #scalingrelation()
-    plot_ps()
+    # plot_ps()
     #npzsavetxt(ts, ('%s/timeseries_%s.txt' % (direc, para)))
     #npzsavetxt(ps, ('%s/power_%s.txt' % (direc, para)))
