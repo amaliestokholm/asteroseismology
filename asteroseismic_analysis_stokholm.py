@@ -345,11 +345,11 @@ def background(nu_max):
     # Load data
     freq, powerden = loadnpz(pds).T
     
-    P_n = np.mean(powerden[freq > 2200])
-    guess_sigma_0 = np.sqrt(np.mean(powerden ** 2))
-    guess_tau_0 = 1 / nu_max
-    guess_sigma_1 = np.sqrt(np.mean(powerden ** 2))
-    guess_tau_1 = 1 / nu_max
+    P_n = [np.mean(powerden[freq > 2200]), np.mean(powerden[freq > 1000])]
+    guess_sigma_0 = [np.sqrt(np.mean(powerden ** 2)), np.sqrt(np.mean(powerden ** 2)) +1]
+    guess_tau_0 = [1 / nu_max, 1 / (nu_max +10)]
+    guess_sigma_1 = [np.sqrt(np.mean(powerden ** 2)), np.sqrt(np.mean(powerden ** 2)) +1]
+    guess_tau_1 = [1 / nu_max, 1 / (nu_max +10)]
     print('Guessing values are: %f, %f, %f, %f' % (guess_sigma_0, 
         guess_tau_0, guess_sigma_1, guess_tau_1))
 
