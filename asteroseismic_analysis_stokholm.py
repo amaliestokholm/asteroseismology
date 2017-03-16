@@ -86,6 +86,7 @@ import scipy.signal
 import scipy.ndimage
 from scipy.optimize import curve_fit
 from time import time as now
+import itertools
 import matplotlib
 
 def matplotlib_setup():
@@ -344,23 +345,31 @@ def background(nu_max):
     """
     # Load data
     freq, powerden = loadnpz(pds).T
-    
-    P_n = [np.mean(powerden[freq > 2200]), np.mean(powerden[freq > 1000])]
-    guess_sigma_0 = [np.sqrt(np.mean(powerden ** 2)), np.sqrt(np.mean(powerden ** 2)) +1]
-    guess_tau_0 = [1 / nu_max, 1 / (nu_max +10)]
-    guess_sigma_1 = [np.sqrt(np.mean(powerden ** 2)), np.sqrt(np.mean(powerden ** 2)) +1]
-    guess_tau_1 = [1 / nu_max, 1 / (nu_max +10)]
+    freq = freq[::1000]
+    powerden = powerden[::1000]
+
+    P_n = np.arange(0.1, 0.25, step=0.05)  #[np.median(powerden[freq > f]) for f in np.arange(2000, 6000, step=500)]
+    guess_sigma_0 = [n * np.sqrt(np.mean(powerden ** 2)) for n in np.arange(1, 10, step=0.5)]
+    guess_tau_0 = [n * (1 / nu_max) for n in np.arange(0.5, 2, step=0.1)]
+    guess_sigma_1 = [n * np.sqrt(np.mean(powerden ** 2)) for n in np.arange(10, 50, step=5)]
+    guess_tau_1 = [n * (1 / nu_max) for n in np.arange(0.01, 0.2, step=0.05)]
+
+    print('Parameterspace is %f-%f, %f-%f, %f-%f, %f-%f, and %f-%f' % (
+        np.min(guess_sigma_0), np.max(guess_sigma_0), np.min(guess_tau_0), np.max(guess_tau_0),
+        np.min(guess_sigma_1), np.max(guess_sigma_1), np.min(guess_tau_1), np.max(guess_tau_1),
+        np.min(P_n), np.max(P_n)))
+
 
     # Eq. 1 in mentioned paper
-    def background_fit_2(nu, sigma_0, tau_0):
-        k1 = ((4 * sigma_0 ** 2 * tau_0) /
-              (1 + (2 * np.pi * nu * tau_0) ** 2 +
-               (2 * np.pi * nu * tau_0) ** 4))
+    def background_fit_2(nu, sigma, tau):
+        k1 = ((4 * sigma ** 2 * tau) /
+              (1 + (2 * np.pi * nu * tau) ** 2 +
+               (2 * np.pi * nu * tau) ** 4))
         return k1
 
     def background_fit(nu, sigma_0, tau_0, sigma_1, tau_1, P_n):
-        k1 = background_fit_2(nu, sigma_0, tau_0)
-        k2 = background_fit_2(nu, sigma_1, tau_1)
+        k1 = background_fit_2(nu=nu, sigma=sigma_0, tau=tau_0)
+        k2 = background_fit_2(nu=nu, sigma=sigma_1, tau=tau_1)
         return P_n + k1 + k2
 
     def logbackground_fit(nu, sigma_0, tau_0, sigma_1, tau_1, P_n):
@@ -377,36 +386,45 @@ def background(nu_max):
     def gridsearch(f, xs, ys, params):
         # Save l2-norm in a dictionary for the tuple of chosen parameters
         score = {}
+        dxs = np.diff(np.log10(xs))
+        dxs = np.concatenate([dxs, [dxs[-1]]])
         for p in itertools.product(*params):
+            print('\rNow %f %f %f %f %f, Done %f' %
+                  (*p, len(score)/np.product([len(x) for x in params])),
+                  end='')
             zs = f(xs, *p)
-            score[p] = np.mean((ys- zs) ** 2)
+            score[p] = np.sum((ys- zs) ** 2 * dxs)
+        print('')
         return min(score.keys(), key=lambda p: score[p])
 
     # Cut out around the signals in order not to overfit them
-    minimum = 650
-    maximum = 1350
+    minimum = 700
+    maximum = 1200
 
     filt = (freq > minimum) & (freq < maximum)
     freq_filt = freq[~filt]
     powerden_filt = powerden[~filt]
-    
-    # Fit
-    #z0 = [guess_sigma_0, guess_tau_0, guess_sigma_1, guess_tau_1]
-    #popt, pcov = curve_fit(logbackground_fit, freq_filt,
-    #                       np.log10(powerden_filt), p0=z0, maxfev=10000)
 
     z0 = [guess_sigma_0, guess_tau_0, guess_sigma_1, guess_tau_1, P_n]
     popt = gridsearch(logbackground_fit, freq_filt, np.log10(powerden_filt), z0)
 
+    print('Best parameter for background were: s_0 %f t_0 %f s_1 %f t_1 %f P_n %f' % tuple(popt))
+    # Fit
+    #z0 = [guess_sigma_0, guess_tau_0, guess_sigma_1, guess_tau_1]
+    popt, pcov = curve_fit(logbackground_fit, freq_filt,
+                           np.log10(powerden_filt), p0=popt, maxfev=10000)
+    print('Best parameter for background were: s_0 %f t_0 %f s_1 %f t_1 %f P_n %f' % tuple(popt))
+
     plt.figure()
+
     plt.loglog(freq, powerden, 'k', basex=10, basey=10, linewidth=0.1)
     plt.loglog(freq, background_fit(freq, *popt), 'r-', basex=10,
                basey=10)
-    plt.loglog(freq, P_n + background_fit_2(freq, *popt[:2]), 'r--',
+    plt.loglog(freq, popt[4] + background_fit_2(freq, *popt[:2]), 'r--',
                basex=10, basey=10)
-    plt.loglog(freq, P_n + background_fit_2(freq, *popt[2:]), 'r--',
+    plt.loglog(freq, popt[4] + background_fit_2(freq, *popt[2:4]), 'r--',
                basex=10, basey=10)
-    plt.loglog(freq, np.ones(len(freq))*P_n, 'r--')
+    plt.loglog(freq, np.ones(len(freq)) * popt[4], 'r--')
     # plt.title(r'The power density spectrum of %s' % starname)
     plt.xlabel(r'Frequency [$\mu$Hz]')
     plt.ylabel(r'Power density [ppm$^2\, \mu$Hz^{-1}$]')
@@ -853,11 +871,11 @@ def echelle(delta_nu, freq, power):
 
 if __name__ == "__main__":
     # Here the functions are called
-    make_the_timeseries()
+    #make_the_timeseries()
     #make_the_power_spectrum()
-    #smooth_power_spectrum()
-    #power_density_spectrum()
-    #background(nu_max_guess)
+    smooth_power_spectrum()
+    power_density_spectrum()
+    background(nu_max_guess)
     #scalingrelation()
     # plot_ps()
     #npzsavetxt(ts, ('%s/timeseries_%s.txt' % (direc, para)))
