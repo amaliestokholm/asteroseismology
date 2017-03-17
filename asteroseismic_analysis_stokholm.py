@@ -349,16 +349,59 @@ def background(nu_max):
     powerden = powerden[::1000]
 
     P_n = np.arange(0.1, 0.25, step=0.05)  #[np.median(powerden[freq > f]) for f in np.arange(2000, 6000, step=500)]
-    guess_sigma_0 = [n * np.sqrt(np.mean(powerden ** 2)) for n in np.arange(1, 10, step=0.5)]
-    guess_tau_0 = [n * (1 / nu_max) for n in np.arange(0.5, 2, step=0.1)]
-    guess_sigma_1 = [n * np.sqrt(np.mean(powerden ** 2)) for n in np.arange(10, 50, step=5)]
-    guess_tau_1 = [n * (1 / nu_max) for n in np.arange(0.01, 0.2, step=0.05)]
+    guess_sigma_0 =  [0.05 + n for n in np.arange(0.01, 3, step=0.5)]  #[n * np.sqrt(np.mean(powerden ** 2)) for n in np.arange(1, 10, step=0.5)]
+    guess_tau_0 = [230 + n for n in np.arange(5, 70, step=5)]  #[n * (1 / nu_max) for n in np.arange(0.5, 2, step=0.1)]
+    guess_sigma_1 = [0.05 + n for n in np.arange(0.01, 100, step=5)]  # [n * np.sqrt(np.mean(powerden ** 2)) for n in np.arange(10, 50, step=5)]
+    guess_tau_1 = [650 + n for n in np.arange(10, 100, step=10)]  # [n * (1 / nu_max) for n in np.arange(0.01, 0.2, step=0.05)]
 
     print('Parameterspace is %f-%f, %f-%f, %f-%f, %f-%f, and %f-%f' % (
         np.min(guess_sigma_0), np.max(guess_sigma_0), np.min(guess_tau_0), np.max(guess_tau_0),
         np.min(guess_sigma_1), np.max(guess_sigma_1), np.min(guess_tau_1), np.max(guess_tau_1),
         np.min(P_n), np.max(P_n)))
 
+
+    # In order to perform the fit, we choose to weight the data by fitting the model to logaritmic bins.
+    def running_median(freq, powerden, weights=None, bin_size=None, bins=None):
+        if bin_size is not None and bins is not None:
+            raise TypeError('cannot specify both bin_size and bins')
+        freq = np.squeeze(freq)
+        powerden = np.squeeze(powerden)
+        n, = freq.shape
+        n_, = powerden.shape
+        assert n == n_
+
+        if weights is None:
+            weights = np.ones(n, dtype=np.float32)
+
+        # Sort data by frequency
+        sort_ind = np.argsort(freq)
+        freq = freq[sort_ind]
+        powerden = powerden[sort_ind]
+        weights = weights[sort_ind]
+
+        # Compute log of frequencies
+        log_freq = np.log10(freq)
+        # Compute bin_size
+        if bin_size is None:
+            if bins is None:
+                bins = 10000
+            df = np.diff(log_freq)
+            d = np.median(df)
+            close = df < 100*d
+            span = np.sum(df[close])
+            bin_size = span / bins
+        bin_index = np.floor((log_freq - log_freq[0]) / bin_size)
+        internal_boundary = (bin_index[1:] != bin_index[:-1]).nonzero()[0]
+        boundary = [0] + internal_boundary.tolist() + [n]
+
+        bin_freq = []
+        bin_pden = []
+        bin_weight = []
+        for i, j in zip(boundary[:-1], boundary[1:]):
+            bin_freq.append(np.mean(freq[i:j]))
+            bin_pden.append(np.median(powerden[i:j]))
+            bin_weight.append(np.sum(weights[i:j]))
+        return np.array(bin_freq), np.array(bin_pden), np.array(bin_weight)
 
     # Eq. 1 in mentioned paper
     def background_fit_2(nu, sigma, tau):
@@ -393,7 +436,7 @@ def background(nu_max):
                   (*p, len(score)/np.product([len(x) for x in params])),
                   end='')
             zs = f(xs, *p)
-            score[p] = np.sum((ys- zs) ** 2 * dxs)
+            score[p] = np.sum((ys- zs) ** 2)
         print('')
         return min(score.keys(), key=lambda p: score[p])
 
