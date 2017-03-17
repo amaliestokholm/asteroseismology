@@ -345,19 +345,6 @@ def background(nu_max):
     """
     # Load data
     freq, powerden = loadnpz(pds).T
-    freq = freq[::1000]
-    powerden = powerden[::1000]
-
-    P_n = np.arange(0.1, 0.25, step=0.05)  #[np.median(powerden[freq > f]) for f in np.arange(2000, 6000, step=500)]
-    guess_sigma_0 =  [0.05 + n for n in np.arange(0.01, 3, step=0.5)]  #[n * np.sqrt(np.mean(powerden ** 2)) for n in np.arange(1, 10, step=0.5)]
-    guess_tau_0 = [230 + n for n in np.arange(5, 70, step=5)]  #[n * (1 / nu_max) for n in np.arange(0.5, 2, step=0.1)]
-    guess_sigma_1 = [0.05 + n for n in np.arange(0.01, 100, step=5)]  # [n * np.sqrt(np.mean(powerden ** 2)) for n in np.arange(10, 50, step=5)]
-    guess_tau_1 = [650 + n for n in np.arange(10, 100, step=10)]  # [n * (1 / nu_max) for n in np.arange(0.01, 0.2, step=0.05)]
-
-    print('Parameterspace is %f-%f, %f-%f, %f-%f, %f-%f, and %f-%f' % (
-        np.min(guess_sigma_0), np.max(guess_sigma_0), np.min(guess_tau_0), np.max(guess_tau_0),
-        np.min(guess_sigma_1), np.max(guess_sigma_1), np.min(guess_tau_1), np.max(guess_tau_1),
-        np.min(P_n), np.max(P_n)))
 
 
     # In order to perform the fit, we choose to weight the data by fitting the model to logaritmic bins.
@@ -391,7 +378,7 @@ def background(nu_max):
             span = np.sum(df[close])
             bin_size = span / bins
         bin_index = np.floor((log_freq - log_freq[0]) / bin_size)
-        internal_boundary = (bin_index[1:] != bin_index[:-1]).nonzero()[0]
+        internal_boundary = 1 + (bin_index[1:] != bin_index[:-1]).nonzero()[0]
         boundary = [0] + internal_boundary.tolist() + [n]
 
         bin_freq = []
@@ -440,16 +427,29 @@ def background(nu_max):
         print('')
         return min(score.keys(), key=lambda p: score[p])
 
+    P_n = np.arange(0.1, 0.25, step=0.05)  #[np.median(powerden[freq > f]) for f in np.arange(2000, 6000, step=500)]
+    guess_sigma_0 =  [0.05 + n for n in np.arange(0.01, 3, step=0.5)]  #[n * np.sqrt(np.mean(powerden ** 2)) for n in np.arange(1, 10, step=0.5)]
+    guess_tau_0 = [n * (3100 / nu_max) * 1e-6 for n in np.arange(100, 1000, step=50)]
+    guess_sigma_1 = [0.05 + n for n in np.arange(0.01, 3, step=0.5)]  # [n * np.sqrt(np.mean(powerden ** 2)) for n in np.arange(10, 50, step=5)]
+    guess_tau_1 = [n * (3100 / nu_max) * 1e-6 for n in np.arange(100, 1000, step=50)]#[650 + n for n in np.arange(10, 100, step=10)]  # [n * (1 / nu_max) for n in np.arange(0.01, 0.2, step=0.05)]
+
+    print('Parameterspace is %f-%f, %f-%f, %f-%f, %f-%f, and %f-%f' % (
+        np.min(guess_sigma_0), np.max(guess_sigma_0), np.min(guess_tau_0), np.max(guess_tau_0),
+        np.min(guess_sigma_1), np.max(guess_sigma_1), np.min(guess_tau_1), np.max(guess_tau_1),
+        np.min(P_n), np.max(P_n)))
+
     # Cut out around the signals in order not to overfit them
-    minimum = 700
+    minimum = 800
     maximum = 1200
 
     filt = (freq > minimum) & (freq < maximum)
     freq_filt = freq[~filt]
     powerden_filt = powerden[~filt]
-
-    z0 = [guess_sigma_0, guess_tau_0, guess_sigma_1, guess_tau_1, P_n]
-    popt = gridsearch(logbackground_fit, freq_filt, np.log10(powerden_filt), z0)
+    
+    freq_filt, powerden_filt, ws = running_median(freq_filt, powerden_filt, bin_size=1e-3)
+    # z0 = [guess_sigma_0, guess_tau_0, guess_sigma_1, guess_tau_1, P_n]
+    # popt = gridsearch(logbackground_fit, freq_filt, np.log10(powerden_filt), z0)
+    popt = [52.433858, 0.000885, 81.893752, 0.000167, 0.220056]
 
     print('Best parameter for background were: s_0 %f t_0 %f s_1 %f t_1 %f P_n %f' % tuple(popt))
     # Fit
@@ -458,20 +458,23 @@ def background(nu_max):
                            np.log10(powerden_filt), p0=popt, maxfev=10000)
     print('Best parameter for background were: s_0 %f t_0 %f s_1 %f t_1 %f P_n %f' % tuple(popt))
 
-    plt.figure()
+    freq_bins, pden_bins, _ = running_median(freq, powerden)
+    freq = freq[::1000]
+    powerden = powerden[::1000]
 
-    plt.loglog(freq, powerden, 'k', basex=10, basey=10, linewidth=0.1)
-    plt.loglog(freq, background_fit(freq, *popt), 'r-', basex=10,
+    plt.figure()
+    plt.loglog(freq_bins, pden_bins, 'k', basex=10, basey=10, linewidth=0.1)
+    plt.loglog(freq_bins, background_fit(freq_bins, *popt), 'r-', basex=10,
                basey=10)
-    plt.loglog(freq, popt[4] + background_fit_2(freq, *popt[:2]), 'r--',
+    plt.loglog(freq_bins, popt[4] + background_fit_2(freq_bins, *popt[:2]), 'r--',
                basex=10, basey=10)
-    plt.loglog(freq, popt[4] + background_fit_2(freq, *popt[2:4]), 'r--',
+    plt.loglog(freq_bins, popt[4] + background_fit_2(freq_bins, *popt[2:4]), 'r--',
                basex=10, basey=10)
-    plt.loglog(freq, np.ones(len(freq)) * popt[4], 'r--')
+    plt.loglog(freq_bins, np.ones(len(freq_bins)) * popt[4], 'r--')
     # plt.title(r'The power density spectrum of %s' % starname)
     plt.xlabel(r'Frequency [$\mu$Hz]')
     plt.ylabel(r'Power density [ppm$^2\, \mu$Hz^{-1}$]')
-    plt.xlim([np.amin(freq), np.amax(freq)])
+    plt.xlim([np.amin(freq_bins), np.amax(freq_bins)])
     plt.ylim([10 ** (-2), 2 * 10 ** (2)])
     plots.plot_margins()
     plt.savefig(r'%s_backgroundfit_%s_%s.pdf' % (starname,
@@ -479,14 +482,15 @@ def background(nu_max):
 
     # Correct for this simulated background by dividing it out
     corr_powerden = powerden / background_fit(freq, * popt)
+    pden_corr_bins = pden_bins / background_fit(freq_bins, * popt)
 
     plt.figure()
-    plt.loglog(freq, powerden, '0.75', basex=10, basey=10)
-    plt.loglog(freq, corr_powerden, 'k', basex=10, basey=10)
+    plt.loglog(freq_bins, pden_bins, '0.75', basex=10, basey=10)
+    plt.loglog(freq_bins, pden_corr_bins, 'k', basex=10, basey=10)
     # plt.title(r'The corrected power density spectrum of %s' % starname)
     plt.xlabel(r'Frequency [$\mu$Hz]')
     plt.ylabel(r'Power density [ppm$^2\, \mu$Hz^{-1}$]')
-    plt.xlim([np.amin(freq), np.amax(freq)])
+    plt.xlim([np.amin(freq_bins), np.amax(freq_bins)])
     plots.plot_margins()
     plt.savefig(r'%s_backgroundcorrected_%s_%s.pdf' % (starname,
                 minfreq, maxfreq))
@@ -497,14 +501,15 @@ def background(nu_max):
     # Change the amplitude by dividing the PDS with L
     L = time[-1] - time[0]
     print('The length of the time series is %s Ms' % L)
+    power_corr_bins = pden_corr_bins / L
     corr_power = corr_powerden / L
 
     plt.figure()
-    plt.plot(freq, corr_power, 'k', linewidth=0.2)
+    plt.plot(freq_bins, power_corr_bins, 'k', linewidth=0.2)
     # plt.title(r'The power spectrum of %s' % starname)
     plt.xlabel(r'Frequency [$\mu$Hz]')
     plt.ylabel(r'Power [ppm$^2$]')
-    plt.xlim([np.amin(freq), 2000])
+    plt.xlim([np.amin(freq_bins), 2000])
     plots.plot_margins()
     plt.savefig(r'%s_powerspectrum_final_%s_%s.pdf' % (starname,
                 minfreq, maxfreq))
