@@ -214,10 +214,14 @@ def kjeldsen_corr(model_modes, observed_modes):
     #       ((r * ((f_mod) / (f_obs)) - 1) ** (-1)))
     a_list = ((np.mean(f_obs) - r_list * np.mean(f_mod)) /
             (len(f_obs) ** (-1) * np.sum((f_obs / nu0) ** bcor)))
+    rcor = np.mean(r_list)
+    acor = np.mean(a_list)
+    """
     rcor, acor = chilist(r_list, a_list, bcor, f_mod, f_obs, inertia, errors, nu0)
     print('Before calling minimizer:', rcor, acor)
     rcor, acor = chi_optimize(rcor, acor, bcor, f_mod, f_obs, inertia, errors, nu0)
     print('After calling minimizer:', rcor, acor)
+    """
     f_corr = (f_mod + (1 / inertia) * 
               (acor / rcor) * (f_mod / nu0) ** bcor)
     corrected_modes.f.extend(f_corr)
@@ -422,15 +426,15 @@ def echelle(filename, delta_nu, save=None):
     # in the middle of the pixel instead of in the lower left corner.
     plt.xlim([-fres/2, dnu-fres/2])
     plt.ylim([start * fres - dnu/2, endo * fres - dnu/2])
-    """
     plt.imshow(pixeldata, aspect='auto', cmap='Blues',
                interpolation='gaussian', origin='lower',
                extent=(-fres/2, dnu-fres/2,
                        start * fres - dnu/2, endo * fres - dnu/2))
-    """
     if save is not None:
         plt.savefig('./%s_echelle_%s.pdf' % ('181096', delta_nu),
                     bbox_inches='tight')
     return h, plot_position
 
-overplot('amalie3', '181096.txt', 'mikkelfreq.txt', 53.8)
+#overplot('amalie3', '181096.txt', 'mikkelfreq.txt', 53.8)
+echelle('181096.txt', 54) 
+plt.show()

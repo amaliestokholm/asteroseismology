@@ -47,7 +47,7 @@ def getdata(ID, kernelsize, quarter, sigma, noisecut):
     # Find data files in path
     datafiles = sorted([s for s in os.listdir('data/%s/kepler' % ID)
                         if s.endswith('.dat')])
-    datafiles = datafiles[0:(int(quarter)+1)]
+    # datafiles = datafiles[0:(int(quarter)+1)]
 
     # Starting time
     Q1 = np.loadtxt('./data/%s/kepler/%s' % (ID, datafiles[0]),
@@ -98,7 +98,14 @@ def getdata(ID, kernelsize, quarter, sigma, noisecut):
                                                   len(corr_flux_sig)))
 
         # Extra filter in order to remove instrumental noise
-        noiseclip = (corr_flux_sig > noisecut)
+        
+        diff = np.diff(corr_flux_sig)
+        diff = np.append(diff, [0])
+        assert diff.size == corr_flux_sig.size
+        diff_sigma = np.std(diff)
+        noiseclip = diff < (3 * diff_sigma)
+        
+        #noiseclip = (corr_flux_sig > noisecut)
         corr_time_nos = corr_time_sig[noiseclip]
         corr_flux_nos = corr_flux_sig[noiseclip]
         print(' %s data points removed by noise clipping'
@@ -113,7 +120,7 @@ def getdata(ID, kernelsize, quarter, sigma, noisecut):
 
         # Write data to lists
         totaltime = np.r_[totaltime, time]
-        totalflux = np.r_[totalflux, flux]
+        totalflux = np.r_[totalflux, corr_flux]
         totaltime_noise = np.r_[totaltime_noise, corr_time_sig[~noiseclip]]
         totalflux_noise = np.r_[totalflux_noise, corr_flux_sig[~noiseclip]]
         totaldatatime = np.r_[totaldatatime, data_time]
@@ -135,12 +142,13 @@ def getdata(ID, kernelsize, quarter, sigma, noisecut):
     minimize the rendering time of the figure in the pdf file.
     This should only be used for plot optimisation.
     """
+    """
     totaldatatime_norect = totaldatatime
     totaldataflux_norect = totaldataflux
     rects = [
         ((0.01, 2.65), (-0.5e-4, +0.5e-4)),
         ((2.76, 3.38), (-0.5e-4, +0.5e-4)),
-        ((3.89, 5.33), (-0.5e-4, +0.5e-4)),
+        ((3.89, 5.33), (-0.5e-4, +0.5e-4)), 
     ]
     rect_points = 0
     for (x1, x2), (y1, y2) in rects:
@@ -156,10 +164,15 @@ def getdata(ID, kernelsize, quarter, sigma, noisecut):
               np.amax(totaldatatime), np.amin(totaldatatime)],
              [noisecut, noisecut, -np.amax(totaldataflux),
               -np.amax(totaldataflux)], color='0.75')
+
     plt.plot(totaldatatime_norect, totaldataflux_norect,
              color='k', marker='.', ms=1, linestyle='None')
+    """
+    plt.plot(totaldatatime, totaldataflux, color='b', marker='.', ms=1,
+             linestyle='None')
     plt.plot(totaltime_noise, totalflux_noise,
-             color='k', marker='.', ms=1, linestyle='None')
+             color='0.75', marker='.', ms=1, linestyle='None')
+
     plt.xlabel(r'Relative time [Ms]')
     plt.ylabel(r'Relative photometry')
     plt.xlim([np.amin(totaldatatime), np.amax(totaldatatime)])

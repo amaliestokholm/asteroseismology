@@ -447,6 +447,12 @@ def background(nu_max):
     powerden_filt = powerden[~filt]
     
     freq_filt, powerden_filt, ws = running_median(freq_filt, powerden_filt, bin_size=1e-3)
+
+    def cost(popt):
+        return np.mean((logbackground_fit(freq_filt, *popt) - np.log10(powerden_filt)) ** 2)
+
+    freq_fit, powerden_fit, ws = running_median(freq, powerden, bin_size=1e-3)
+
     # z0 = [guess_sigma_0, guess_tau_0, guess_sigma_1, guess_tau_1, P_n]
     # popt = gridsearch(logbackground_fit, freq_filt, np.log10(powerden_filt), z0)
     popt = [52.433858, 0.000885, 81.893752, 0.000167, 0.220056]
@@ -454,27 +460,27 @@ def background(nu_max):
     print('Best parameter for background were: s_0 %f t_0 %f s_1 %f t_1 %f P_n %f' % tuple(popt))
     # Fit
     #z0 = [guess_sigma_0, guess_tau_0, guess_sigma_1, guess_tau_1]
-    popt, pcov = curve_fit(logbackground_fit, freq_filt,
-                           np.log10(powerden_filt), p0=popt, maxfev=10000)
+    popt, pcov = curve_fit(logbackground_fit, freq_fit,
+                           np.log10(powerden_fit), p0=popt, maxfev=10000)
     print('Best parameter for background were: s_0 %f t_0 %f s_1 %f t_1 %f P_n %f' % tuple(popt))
 
-    freq_bins, pden_bins, _ = running_median(freq, powerden)
-    freq = freq[::1000]
-    powerden = powerden[::1000]
+    print('Cost = %f' % cost(popt))
+    freq_plot = freq[::1000]
+    powerden_plot = powerden[::1000]
 
     plt.figure()
-    plt.loglog(freq_bins, pden_bins, 'k', basex=10, basey=10, linewidth=0.1)
-    plt.loglog(freq_bins, background_fit(freq_bins, *popt), 'r-', basex=10,
+    plt.loglog(freq_plot, powerden_plot, '0.9', basex=10, basey=10, linewidth=0.1)
+    plt.loglog(freq_plot, background_fit(freq_plot, *popt), 'b-', basex=10,
                basey=10)
-    plt.loglog(freq_bins, popt[4] + background_fit_2(freq_bins, *popt[:2]), 'r--',
+    plt.loglog(freq_plot, popt[4] + background_fit_2(freq_plot, *popt[:2]), 'b--',
                basex=10, basey=10)
-    plt.loglog(freq_bins, popt[4] + background_fit_2(freq_bins, *popt[2:4]), 'r--',
+    plt.loglog(freq_plot, popt[4] + background_fit_2(freq_plot, *popt[2:4]), 'b--',
                basex=10, basey=10)
-    plt.loglog(freq_bins, np.ones(len(freq_bins)) * popt[4], 'r--')
+    plt.loglog(freq_plot, np.ones(len(freq_plot)) * popt[4], 'b--')
     # plt.title(r'The power density spectrum of %s' % starname)
     plt.xlabel(r'Frequency [$\mu$Hz]')
     plt.ylabel(r'Power density [ppm$^2\, \mu$Hz^{-1}$]')
-    plt.xlim([np.amin(freq_bins), np.amax(freq_bins)])
+    plt.xlim([np.amin(freq_plot), np.amax(freq_plot)])
     plt.ylim([10 ** (-2), 2 * 10 ** (2)])
     plots.plot_margins()
     plt.savefig(r'%s_backgroundfit_%s_%s.pdf' % (starname,
@@ -482,15 +488,14 @@ def background(nu_max):
 
     # Correct for this simulated background by dividing it out
     corr_powerden = powerden / background_fit(freq, * popt)
-    pden_corr_bins = pden_bins / background_fit(freq_bins, * popt)
+    corr_powerden_plot = powerden_plot / background_fit(freq_plot, * popt)
 
     plt.figure()
-    plt.loglog(freq_bins, pden_bins, '0.75', basex=10, basey=10)
-    plt.loglog(freq_bins, pden_corr_bins, 'k', basex=10, basey=10)
+    plt.loglog(freq_plot, powerden_plot, '0.75', basex=10, basey=10, linewidth=0.1)
     # plt.title(r'The corrected power density spectrum of %s' % starname)
     plt.xlabel(r'Frequency [$\mu$Hz]')
     plt.ylabel(r'Power density [ppm$^2\, \mu$Hz^{-1}$]')
-    plt.xlim([np.amin(freq_bins), np.amax(freq_bins)])
+    plt.xlim([np.amin(freq_plot), np.amax(freq_plot)])
     plots.plot_margins()
     plt.savefig(r'%s_backgroundcorrected_%s_%s.pdf' % (starname,
                 minfreq, maxfreq))
@@ -501,15 +506,15 @@ def background(nu_max):
     # Change the amplitude by dividing the PDS with L
     L = time[-1] - time[0]
     print('The length of the time series is %s Ms' % L)
-    power_corr_bins = pden_corr_bins / L
     corr_power = corr_powerden / L
+    corr_power_plot = corr_powerden_plot / L
 
     plt.figure()
-    plt.plot(freq_bins, power_corr_bins, 'k', linewidth=0.2)
+    plt.plot(freq_plot, corr_power_plot, 'k', linewidth=0.1)
     # plt.title(r'The power spectrum of %s' % starname)
     plt.xlabel(r'Frequency [$\mu$Hz]')
     plt.ylabel(r'Power [ppm$^2$]')
-    plt.xlim([np.amin(freq_bins), 2000])
+    plt.xlim([np.amin(freq_plot), 2000])
     plots.plot_margins()
     plt.savefig(r'%s_powerspectrum_final_%s_%s.pdf' % (starname,
                 minfreq, maxfreq))
