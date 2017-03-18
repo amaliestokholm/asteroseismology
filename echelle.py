@@ -2,7 +2,7 @@ import os
 import numpy as np
 import scipy
 import matplotlib
-import seaborn as sns
+#import seaborn as sns
 from collections import namedtuple
 
 
@@ -407,8 +407,8 @@ def echelle(filename, delta_nu, save=None):
     endorder = nmax + 9
     # print("%s pixel rows of %s pixels" % (endorder-startorder, nx))
 
-    start = int(startorder * nx + nx/2)
-    endo = int(endorder * nx + nx/2)
+    start = int(startorder * nx)
+    endo = int(endorder * nx)
     apower = power[start:endo]
     pixeldata = np.reshape(apower, (-1, nx))
 
@@ -425,11 +425,13 @@ def echelle(filename, delta_nu, save=None):
     # Subtract half a pixel in order for data points to show up
     # in the middle of the pixel instead of in the lower left corner.
     plt.xlim([-fres/2, dnu-fres/2])
-    plt.ylim([start * fres - dnu/2, endo * fres - dnu/2])
-    plt.imshow(pixeldata, aspect='auto', cmap='Blues',
-               interpolation='gaussian', origin='lower',
-               extent=(-fres/2, dnu-fres/2,
-                       start * fres - dnu/2, endo * fres - dnu/2))
+    plt.ylim([start * fres, endo * fres])
+    for row in range(pixeldata.shape[0]):
+        bottom = (start + (nx * row)) * fres
+        top = (start + (nx * (row + 1))) * fres
+        plt.imshow(pixeldata[row:row+1], aspect='auto', cmap='Blues',
+                   interpolation='gaussian', origin='lower',
+                   extent=(-fres/2, dnu-fres/2, bottom, top))
     if save is not None:
         plt.savefig('./%s_echelle_%s.pdf' % ('181096', delta_nu),
                     bbox_inches='tight')
