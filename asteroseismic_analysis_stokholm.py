@@ -69,7 +69,7 @@ gausssigma = 70  # FWHM~3*delta_nu, gausssigma = FWHM / 2*sqrt(2*ln(2))
 comparorder = 500
 minheight = 0.75
 nmsigma = 7500
-ac_minheight = 0.15
+ac_minheight = 0.07 # 0.15
 ac_comparorder = 700
 dv = 10
 nu_max_guess = 996
@@ -188,11 +188,11 @@ def make_the_timeseries():
 
     # Plot the time series
     plt.figure()
+    fix_margins
     plt.plot(time, flux, 'k.')
     plt.xlabel(r'Relative time [Ms]')
     plt.ylabel(r'Photometry')
     plt.xlim([np.amin(time), np.amax(time)])
-    plots.plot_margins()
     plt.savefig('%s_time.pdf' % (starname))
 
     # Save data in textfile
@@ -232,21 +232,21 @@ def make_the_power_spectrum():
 
     # Plot the power spectrum
     plt.figure()
+    fix_margins
     plt.plot(freq, power, 'k', linewidth=0.1)
     plt.title(r'The power spectrum of %s' % starname)
     plt.xlabel(r'Frequency [$\mu$Hz]')
     plt.ylabel(r'Power [ppm$^2$]')
     plt.xlim([np.amin(freq), np.amax(freq)])
-    plots.plot_margins()
     plt.savefig('%s_power_%s_%s.pdf' % (starname, minfreq, maxfreq))
 
     plt.figure()
+    fix_margins
     plt.plot(freq, power, 'k', linewidth=0.1)
     plt.xlim([np.amin(freq), 5000])
     plt.title(r'The power spectrum of %s' % starname)
     plt.xlabel(r'Frequency [$\mu$Hz]')
     plt.ylabel(r'Power [ppm$^2$]')
-    plots.plot_margins()
     plt.savefig(r'%s_zoom_ps_%s_%s.pdf' % (starname, minfreq, maxfreq))
 
     # Save data in textfile
@@ -275,21 +275,21 @@ def smooth_power_spectrum():
 
     # Plot the smoothened power spectrum
     plt.figure()
+    fix_margins
     plt.plot(freq, smooth_data, 'r-', linewidth=0.1)
     plt.xlabel(r'Frequency [$\mu$Hz]')
     plt.ylabel(r'Power [ppm$^2$]')
     plt.xlim([np.amin(freq), np.amax(freq)])
-    plots.plot_margins()
     plt.savefig(r'%s_smoothenpower_%s_%s.pdf' % (starname, minfreq,
                 maxfreq))
 
     plt.figure()
+    fix_margins
     plt.plot(freq, smooth_data, 'k', linewidth=0.1)
     # plt.title(r'The smoothened power spectrum of %s' % starname)
     plt.xlabel(r'Frequency [$\mu$Hz]')
     plt.ylabel(r'Power [ppm$^2$]')
     plt.xlim([np.amin(freq), 2000])
-    plots.plot_margins()
     plt.savefig(r'%s_smoothenpower_zoom_%s_%s.pdf' % (starname,
                                                       minfreq, maxfreq))
     #plt.show()
@@ -320,11 +320,11 @@ def power_density_spectrum():
 
     # Plot
     plt.figure()
+    fix_margins
     plt.plot(freq, powerden, 'k', linewidth=0.1)
     plt.xlabel(r'Frequency [$\mu$Hz]')
     plt.ylabel(r'Power density [ppm$^2\,\mu$Hz$^{-1}$]')
     plt.xlim([np.amin(freq), np.amax(freq)])
-    plots.plot_margins()
     plt.savefig('%s_powerden_%s_%s.pdf' % (starname, minfreq, maxfreq))
 
     # Save data in textfile
@@ -428,10 +428,10 @@ def background(nu_max):
         return min(score.keys(), key=lambda p: score[p])
 
     P_n = np.arange(0.1, 0.25, step=0.05)  #[np.median(powerden[freq > f]) for f in np.arange(2000, 6000, step=500)]
-    guess_sigma_0 =  [0.05 + n for n in np.arange(0.01, 3, step=0.5)]  #[n * np.sqrt(np.mean(powerden ** 2)) for n in np.arange(1, 10, step=0.5)]
-    guess_tau_0 = [n * (3100 / nu_max) * 1e-6 for n in np.arange(100, 1000, step=50)]
-    guess_sigma_1 = [0.05 + n for n in np.arange(0.01, 3, step=0.5)]  # [n * np.sqrt(np.mean(powerden ** 2)) for n in np.arange(10, 50, step=5)]
-    guess_tau_1 = [n * (3100 / nu_max) * 1e-6 for n in np.arange(100, 1000, step=50)]#[650 + n for n in np.arange(10, 100, step=10)]  # [n * (1 / nu_max) for n in np.arange(0.01, 0.2, step=0.05)]
+    guess_sigma_0 =  [n * np.sqrt(np.mean(powerden ** 2)) for n in np.arange(10, 50, step=5)]
+    guess_tau_0 = [n * (1 / nu_max) for n in np.arange(0.01, 0.2, step=0.05)]
+    guess_sigma_1 = [n * np.sqrt(np.mean(powerden ** 2)) for n in np.arange(10, 50, step=5)]
+    guess_tau_1 = [n * (1 / nu_max) for n in np.arange(0.01, 0.2, step=0.05)]
 
     print('Parameterspace is %f-%f, %f-%f, %f-%f, %f-%f, and %f-%f' % (
         np.min(guess_sigma_0), np.max(guess_sigma_0), np.min(guess_tau_0), np.max(guess_tau_0),
@@ -439,7 +439,7 @@ def background(nu_max):
         np.min(P_n), np.max(P_n)))
 
     # Cut out around the signals in order not to overfit them
-    minimum = 800
+    minimum = 600
     maximum = 1200
 
     filt = (freq > minimum) & (freq < maximum)
@@ -451,11 +451,11 @@ def background(nu_max):
     def cost(popt):
         return np.mean((logbackground_fit(freq_filt, *popt) - np.log10(powerden_filt)) ** 2)
 
-    freq_fit, powerden_fit, ws = running_median(freq, powerden, bin_size=1e-3)
+    freq_fit, powerden_fit, ws = running_median(freq, powerden, bin_size=1e-4)
 
-    # z0 = [guess_sigma_0, guess_tau_0, guess_sigma_1, guess_tau_1, P_n]
-    # popt = gridsearch(logbackground_fit, freq_filt, np.log10(powerden_filt), z0)
-    popt = [52.433858, 0.000885, 81.893752, 0.000167, 0.220056]
+    z0 = [guess_sigma_0, guess_tau_0, guess_sigma_1, guess_tau_1, P_n]
+    popt = gridsearch(logbackground_fit, freq_fit, np.log10(powerden_fit), z0)
+    # popt = [52.433858, 0.000885, 81.893752, 0.000167, 0.220056]
 
     print('Best parameter for background were: s_0 %f t_0 %f s_1 %f t_1 %f P_n %f' % tuple(popt))
     # Fit
@@ -469,7 +469,8 @@ def background(nu_max):
     powerden_plot = powerden[::1000]
 
     plt.figure()
-    plt.loglog(freq_plot, powerden_plot, '0.9', basex=10, basey=10, linewidth=0.1)
+    fix_margins
+    plt.loglog(freq_plot, powerden_plot, '0.5', basex=10, basey=10, linewidth=0.1)
     plt.loglog(freq_plot, background_fit(freq_plot, *popt), 'b-', basex=10,
                basey=10)
     plt.loglog(freq_plot, popt[4] + background_fit_2(freq_plot, *popt[:2]), 'b--',
@@ -482,21 +483,21 @@ def background(nu_max):
     plt.ylabel(r'Power density [ppm$^2\, \mu$Hz^{-1}$]')
     plt.xlim([np.amin(freq_plot), np.amax(freq_plot)])
     plt.ylim([10 ** (-2), 2 * 10 ** (2)])
-    plots.plot_margins()
     plt.savefig(r'%s_backgroundfit_%s_%s.pdf' % (starname,
                 minfreq, maxfreq))
 
     # Correct for this simulated background by dividing it out
-    corr_powerden = powerden / background_fit(freq, * popt)
+    corr_powerden = powerden / background_fit(freq, *popt)
     corr_powerden_plot = powerden_plot / background_fit(freq_plot, * popt)
 
     plt.figure()
+    fix_margins
     plt.loglog(freq_plot, powerden_plot, '0.75', basex=10, basey=10, linewidth=0.1)
+    plt.loglog(freq_plot, corr_powerden_plot, 'k', basex=10, basey=10, linewidth=0.1)
     # plt.title(r'The corrected power density spectrum of %s' % starname)
     plt.xlabel(r'Frequency [$\mu$Hz]')
     plt.ylabel(r'Power density [ppm$^2\, \mu$Hz^{-1}$]')
     plt.xlim([np.amin(freq_plot), np.amax(freq_plot)])
-    plots.plot_margins()
     plt.savefig(r'%s_backgroundcorrected_%s_%s.pdf' % (starname,
                 minfreq, maxfreq))
     #plt.show()
@@ -510,12 +511,12 @@ def background(nu_max):
     corr_power_plot = corr_powerden_plot / L
 
     plt.figure()
+    fix_margins
     plt.plot(freq_plot, corr_power_plot, 'k', linewidth=0.1)
     # plt.title(r'The power spectrum of %s' % starname)
     plt.xlabel(r'Frequency [$\mu$Hz]')
     plt.ylabel(r'Power [ppm$^2$]')
     plt.xlim([np.amin(freq_plot), 2000])
-    plots.plot_margins()
     plt.savefig(r'%s_powerspectrum_final_%s_%s.pdf' % (starname,
                 minfreq, maxfreq))
     #plt.show()
@@ -603,6 +604,7 @@ def find_numax():
 
     # Plot the smoothened power spectrum and the value of nu_max
     plt.figure()
+    fix_margins
     plt.plot(freq[::100], A * power[::100], 'k', linewidth=0.2)
     plt.plot(freq[::100], nmps[::100], 'k')
     plt.plot(freqcut, nmpscut, 'g')
@@ -613,7 +615,6 @@ def find_numax():
     plt.ylabel(r'Power [ppm$^2$]')
     plt.xlim([np.amin(freq), 2000])
     plt.ylim([0, 0.75])
-    plots.plot_margins()
     plt.savefig(r'%s_nm%s_%s_%s.pdf' % (starname, nmsigma, minfreq,
                 maxfreq))
     #plt.show()
@@ -714,6 +715,7 @@ def find_deltanu_and_nu_max():
 
     # Plot autocorrelated spectrum
     plt.figure()
+    fix_margins
     plt.plot(nautocorr, autocorr, 'k', linewidth=0.2)
     plt.plot(included_peak, included_height, 'b.')
     plt.plot(freqcut, heightcut, 'g', linewidth=0.1)
@@ -723,7 +725,6 @@ def find_deltanu_and_nu_max():
     plt.xlabel(r'Frequency [$\mu$Hz]')
     plt.ylabel(r'Autocorrelated function')
     plt.ylim([0, 0.5])
-    plots.plot_margins()
     plt.savefig(r'dn%s_%s_%s.pdf' % (starname, minfreq, maxfreq))
 
     # Find nu_max using the method found in
@@ -761,6 +762,7 @@ def find_deltanu_and_nu_max():
     spacinglist = np.asarray([s[:minlen] for s in spacinglist])
     clist = np.asarray([c[:minlen] for c in clist])
     fig = plt.figure()
+    fix_margins
     plt.xlabel(r'Central frequency [$\mu$Hz]')
     plt.ylabel(r'Spacing [$\mu$Hz]')
     plt.xlim([freqlist[0, 0], freqlist[-1, 0]])
@@ -778,6 +780,7 @@ def find_deltanu_and_nu_max():
     print(nu_max)
 
     fig = plt.figure()
+    fix_margins
     plt.xlabel(r'Central frequency [$\mu$Hz]')
     plt.ylabel(r'Collapsed ACF [Arbitary Units]')
     plt.xlim([freqlist[0, 0], freqlist[-1, 0]])
@@ -907,6 +910,7 @@ def echelle(delta_nu, freq, power):
     amaliepeak = np.loadtxt('181096.txt', usecols=(2,)).T
 
     plt.figure()
+    fix_margins
     plt.scatter(peakmod, peak, c=height, cmap='gray')
     #plt.plot(np.mod(timpeak, delta_nu), timpeak, 'bo')
     plt.plot(np.mod(f, delta_nu), f, 'ro')
@@ -929,7 +933,7 @@ if __name__ == "__main__":
     smooth_power_spectrum()
     power_density_spectrum()
     background(nu_max_guess)
-    #scalingrelation()
+    scalingrelation()
     # plot_ps()
     #npzsavetxt(ts, ('%s/timeseries_%s.txt' % (direc, para)))
     #npzsavetxt(ps, ('%s/power_%s.txt' % (direc, para)))
