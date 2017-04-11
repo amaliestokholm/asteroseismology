@@ -91,7 +91,8 @@ import matplotlib
 
 def matplotlib_setup():
     """ The setup, which makes nice plots for the report"""
-    fig_width_pt = 328
+    # \showthe\columnwidth
+    fig_width_pt = 240
     inches_per_pt = 1.0 / 72.27
     golden_mean = (np.sqrt(5) - 1.0) / 2.0
     fig_width = fig_width_pt * inches_per_pt
@@ -111,13 +112,12 @@ def matplotlib_setup():
 matplotlib_setup()
 
 import matplotlib.pyplot as plt
-
+import plots
 
 def fix_margins():
-    plt.subplots_adjust(left=0.12, right=0.95, bottom=0.15, top=0.95)
+    plots.plot_margins()
+    #plt.subplots_adjust(left=0.12, right=0.95, bottom=0.15, top=0.95)
 
-    
-import plots
 
 import kicdata as kic
 import ts_powerspectrum as pspec
@@ -307,7 +307,8 @@ def smooth_power_spectrum():
 def power_density_spectrum():
     print('Calculate the power density spectrum')
     # Load power spectrum
-    freq, power = loadnpz(sps).T
+    freq, power = loadnpz(ps).T
+    freq, spower = loadnpz(sps).T
     time, flux = loadnpz(ts).T
     """ If an oscillation has amplitude A, it will have a peak of A^2 in
     the power spectrum, and A^2 * L in the power density spectrum,
@@ -321,7 +322,7 @@ def power_density_spectrum():
     # Plot
     plt.figure()
     fix_margins
-    plt.plot(freq, powerden, 'k', linewidth=0.1)
+    plt.plot(freq, powerden, 'k', linewidth=0.5)
     plt.xlabel(r'Frequency [$\mu$Hz]')
     plt.ylabel(r'Power density [ppm$^2\,\mu$Hz$^{-1}$]')
     plt.xlim([np.amin(freq), np.amax(freq)])
@@ -440,7 +441,7 @@ def background(nu_max):
 
     # Cut out around the signals in order not to overfit them
     minimum = 600
-    maximum = 1200
+    maximum = 1400
 
     filt = (freq > minimum) & (freq < maximum)
     freq_filt = freq[~filt]
@@ -469,15 +470,15 @@ def background(nu_max):
     powerden_plot = powerden[::1000]
 
     plt.figure()
-    fix_margins
-    plt.loglog(freq_plot, powerden_plot, '0.5', basex=10, basey=10, linewidth=0.1)
-    plt.loglog(freq_plot, background_fit(freq_plot, *popt), 'b-', basex=10,
+    plt.subplots_adjust(left=0.16, right=0.99, bottom=0.16, top=0.95)
+    plt.loglog(freq_plot, powerden_plot, '0.2', basex=10, basey=10, linewidth=0.5)
+    plt.loglog(freq_plot, background_fit(freq_plot, *popt), 'royalblue', linestyle='-', basex=10,
                basey=10)
-    plt.loglog(freq_plot, popt[4] + background_fit_2(freq_plot, *popt[:2]), 'b--',
+    plt.loglog(freq_plot, popt[4] + background_fit_2(freq_plot, *popt[:2]), 'royalblue', linestyle='--',
                basex=10, basey=10)
-    plt.loglog(freq_plot, popt[4] + background_fit_2(freq_plot, *popt[2:4]), 'b--',
+    plt.loglog(freq_plot, popt[4] + background_fit_2(freq_plot, *popt[2:4]), 'royalblue', linestyle='--',
                basex=10, basey=10)
-    plt.loglog(freq_plot, np.ones(len(freq_plot)) * popt[4], 'b--')
+    plt.loglog(freq_plot, np.ones(len(freq_plot)) * popt[4], 'royalblue', linestyle='--')
     # plt.title(r'The power density spectrum of %s' % starname)
     plt.xlabel(r'Frequency [$\mu$Hz]')
     plt.ylabel(r'Power density [ppm$^2\, \mu$Hz^{-1}$]')
@@ -491,7 +492,7 @@ def background(nu_max):
     corr_powerden_plot = powerden_plot / background_fit(freq_plot, * popt)
 
     plt.figure()
-    fix_margins
+    fix_margins()
     plt.loglog(freq_plot, powerden_plot, '0.75', basex=10, basey=10, linewidth=0.1)
     plt.loglog(freq_plot, corr_powerden_plot, 'k', basex=10, basey=10, linewidth=0.1)
     # plt.title(r'The corrected power density spectrum of %s' % starname)
@@ -511,7 +512,7 @@ def background(nu_max):
     corr_power_plot = corr_powerden_plot / L
 
     plt.figure()
-    fix_margins
+    fix_margins()
     plt.plot(freq_plot, corr_power_plot, 'k', linewidth=0.1)
     # plt.title(r'The power spectrum of %s' % starname)
     plt.xlabel(r'Frequency [$\mu$Hz]')
@@ -811,14 +812,16 @@ def scalingrelation():
     s_nu_max_sun = 30
     s_delta_nu_sun = 0.1
     # From the litterature
-    T_eff = 6347
-    s_teff = 46
+    #T_eff = 6347
+    #s_teff = 46
     # From the interferometric analysis
     #T_eff = 6211
     #s_teff = 91
+    T_eff = 6242
+    s_teff = 130
     # From half the timeseries
-    s_nmax = 4
-    s_dn = 0.2
+    s_nmax = 21
+    s_dn = 0.4 
 
     # Find asteroseismic parameters
     delta_nu, nu_max = find_deltanu_and_nu_max()
@@ -928,12 +931,14 @@ def echelle(delta_nu, freq, power):
 
 if __name__ == "__main__":
     # Here the functions are called
+  #  matplotlib_setup()
     #make_the_timeseries()
     #make_the_power_spectrum()
-    smooth_power_spectrum()
+    #smooth_power_spectrum()
     power_density_spectrum()
     background(nu_max_guess)
     scalingrelation()
     # plot_ps()
     #npzsavetxt(ts, ('%s/timeseries_%s.txt' % (direc, para)))
     #npzsavetxt(ps, ('%s/power_%s.txt' % (direc, para)))
+    #npzsavetxt(ts, ('HR7322_timeseries.txt'))
