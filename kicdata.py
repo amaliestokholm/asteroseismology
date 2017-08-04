@@ -2,6 +2,8 @@
 This file defines a function to read and filter the Kepler data
 """
 
+def fix_margins():
+    plt.subplots_adjust(left=0.12, right=0.95, bottom=0.15, top=0.95)
 
 def getdata(ID, kernelsize, quarter, sigma, noisecut):
     """
@@ -25,7 +27,7 @@ def getdata(ID, kernelsize, quarter, sigma, noisecut):
 
     def matplotlib_setup():
         """ The setup, which makes nice plots for the report"""
-        fig_width_pt = 328
+        fig_width_pt = 240
         inches_per_pt = 1.0 / 72.27
         golden_mean = (np.sqrt(5) - 1.0) / 2.0
         fig_width = fig_width_pt * inches_per_pt
@@ -41,8 +43,20 @@ def getdata(ID, kernelsize, quarter, sigma, noisecut):
         matplotlib.rc('text.latex', preamble=
                       r'\usepackage[T1]{fontenc}\usepackage{lmodern}')
 
-    matplotlib_setup()
+    # matplotlib_setup()
     import matplotlib.pyplot as plt
+    import seaborn as sns
+
+    # Activate Seaborn color aliases
+    sns.set_palette('colorblind')
+    sns.set_color_codes(palette='colorblind')
+    plt.style.use('ggplot')
+    sns.set_context('poster')
+    sns.set_style("ticks")
+    
+    def fix_margins():
+        plots.plot_margins()
+        #plt.subplots_adjust(left=0.12, right=0.95, bottom=0.15, top=0.95)
 
     # Find data files in path
     datafiles = sorted([s for s in os.listdir('data/%s/kepler' % ID)
@@ -99,13 +113,13 @@ def getdata(ID, kernelsize, quarter, sigma, noisecut):
 
         # Extra filter in order to remove instrumental noise
         
-        diff = np.diff(corr_flux_sig)
-        diff = np.append(diff, [0])
-        assert diff.size == corr_flux_sig.size
-        diff_sigma = np.std(diff)
-        noiseclip = diff < (3 * diff_sigma)
+        #diff = np.diff(corr_flux_sig)
+        #diff = np.append(diff, [0])
+        #assert diff.size == corr_flux_sig.size
+        #diff_sigma = np.std(diff)
+        #noiseclip = diff < (3 * diff_sigma)
         
-        #noiseclip = (corr_flux_sig > noisecut)
+        noiseclip = (corr_flux_sig > noisecut)
         corr_time_nos = corr_time_sig[noiseclip]
         corr_flux_nos = corr_flux_sig[noiseclip]
         print(' %s data points removed by noise clipping'
@@ -135,6 +149,7 @@ def getdata(ID, kernelsize, quarter, sigma, noisecut):
 
     # Plot the raw data
     plt.figure()
+    # fix_margins()
 
     """ 
     The next step replaces datapoints in the most dense areas of the
@@ -168,18 +183,17 @@ def getdata(ID, kernelsize, quarter, sigma, noisecut):
     plt.plot(totaldatatime_norect, totaldataflux_norect,
              color='k', marker='.', ms=1, linestyle='None')
     """
-    plt.plot(totaldatatime, totaldataflux, color='b', marker='.', ms=1,
-             linestyle='None')
-    plt.plot(totaltime_noise, totalflux_noise,
-             color='0.75', marker='.', ms=1, linestyle='None')
 
-    plt.xlabel(r'Relative time [Ms]')
-    plt.ylabel(r'Relative photometry')
+    plt.plot(totaldatatime[::10], totaldataflux[::10], color='navy', marker='.', ms=5,
+             linestyle='None')
+    plt.plot(totaltime_noise[::10], totalflux_noise[::10],
+             color='slategrey', marker='x', ms=5, linestyle='None', mew=1)
+    plt.xlabel('Relative time [Ms]')
+    plt.ylabel('Relative photometry')
     plt.xlim([np.amin(totaldatatime), np.amax(totaldatatime)])
     plt.ylim([-np.amax(totaldataflux), np.amax(totaldataflux)])
     # http://stackoverflow.com/a/17846471/1570972
     plt.gca().yaxis.get_major_formatter().set_powerlimits((0, 0), )
-    plots.plot_margins()
     plt.savefig('rawdata.pdf')
 
     return (totaldatatime, totaldataflux)

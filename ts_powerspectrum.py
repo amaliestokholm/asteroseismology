@@ -6,7 +6,7 @@ import numpy as np
 from time import time as now
 import os
 import scipy.signal
-from mpl_toolkits.mplot3d import Axes3D
+# from mpl_toolkits.mplot3d import Axes3D
 import matplotlib
 from matplotlib import cm
 
@@ -30,8 +30,17 @@ def matplotlib_setup():
     matplotlib.rc('text.latex', preamble=
                   r'\usepackage[T1]{fontenc}\usepackage{lmodern}')
 
-matplotlib_setup()
+#matplotlib_setup()
 import matplotlib.pyplot as plt
+import seaborn as sns
+
+# Activate Seaborn color aliases
+sns.set_palette('colorblind')
+sns.set_color_codes(palette='colorblind')
+plt.style.use('ggplot')
+sns.set_context('poster')
+sns.set_style("ticks")
+
 
 
 def power_spectrum(time, amplitude, weight=None, minfreq=None, maxfreq=None,

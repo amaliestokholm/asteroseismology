@@ -1,6 +1,7 @@
 import os
 import numpy as np
 import scipy
+from scipy import ndimage
 import matplotlib
 #import seaborn as sns
 from collections import namedtuple
@@ -8,7 +9,7 @@ from collections import namedtuple
 
 def matplotlib_setup():
     """ The setup, which makes nice plots for the report"""
-    fig_width_pt = 328
+    fig_width_pt = 240
     inches_per_pt = 1.0 / 72.27
     golden_mean = (np.sqrt(5) - 1.0) / 2.0
     fig_width = fig_width_pt * inches_per_pt
@@ -30,8 +31,7 @@ import matplotlib.pyplot as plt
 
 
 def fix_margins():
-    plt.subplots_adjust(left=0.12, right=0.95, bottom=0.15, top=0.95)
-
+    plt.subplots_adjust(left=0.12, right=0.97, bottom=0.17, top=0.93)
 
 ModesBase = namedtuple('Modes', 'l n f inertia error dnu'.split())
 
@@ -420,8 +420,8 @@ def echelle(filename, delta_nu, save=None):
 
     h = plt.figure()
     fix_margins()
-    plt.xlabel(r'Frequency mod $\Delta\nu -\Delta\nu/2$ with $\Delta\nu=$ %s / $\mu$Hz' % dnu)
-    plt.ylabel(r'Frequency / $\mu$Hz')
+    plt.xlabel(r'Frequency mod $\Delta\nu [$\mu$Hz]' % dnu)
+    plt.ylabel(r'Frequency [$\mu$Hz]')
     # Subtract half a pixel in order for data points to show up
     # in the middle of the pixel instead of in the lower left corner.
     plt.xlim([-fres/2, dnu-fres/2])
@@ -429,7 +429,8 @@ def echelle(filename, delta_nu, save=None):
     for row in range(pixeldata.shape[0]):
         bottom = (start + (nx * row)) * fres
         top = (start + (nx * (row + 1))) * fres
-        plt.imshow(pixeldata[row:row+1], aspect='auto', cmap='Blues',
+        blur_data = ndimage.gaussian_filter(pixeldata[row:row+1], 75)
+        plt.imshow(blur_data, aspect='auto', cmap='gray',
                    interpolation='gaussian', origin='lower',
                    extent=(-fres/2, dnu-fres/2, bottom, top))
     if save is not None:
@@ -438,5 +439,6 @@ def echelle(filename, delta_nu, save=None):
     return h, plot_position
 
 #overplot('amalie3', '181096.txt', 'mikkelfreq.txt', 53.8)
-echelle('181096.txt', 54) 
+echelle('HD181096_new.txt', 54, save=1) 
+#echelle('HR7322.ts.fft.bgcorr', 54, save=1)
 plt.show()
