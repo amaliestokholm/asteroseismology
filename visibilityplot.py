@@ -58,8 +58,8 @@ ldcoeff = 0.52
 angdia = 0.458
 
 plt.figure()
-plt.xlabel('Spatial frequency [rad$^{-1}$]')
-plt.ylabel('Visibility$^2$')
+plt.xlabel(r'Spatial frequency [rad$^{-1}$]')
+plt.ylabel(r'Visibility$^2$')
 scale = 3
 plt.errorbar(spatialfreq, v2, yerr=sigma_v2,
              ecolor='b',
