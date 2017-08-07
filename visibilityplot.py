@@ -35,7 +35,7 @@ def matplotlib_setup():
 # Activate Seaborn color aliases
 sns.set_palette('colorblind')
 sns.set_color_codes(palette='colorblind')
-sns.set_context('poster',font_scale=1.7)
+sns.set_context('poster',font_scale=0.85)
 sns.set_style("ticks")
 
 
@@ -74,6 +74,8 @@ spatialfreq = np.asarray(sorted(spatialfreq))
 xs = np.linspace(0, 6 * 10 ** 8, 150)
 plt.xlim([np.min(xs), np.max(xs)])
 ld = limb_darkened_fit(xs, angdia, ldcoeff)
+# http://stackoverflow.com/a/17846471/1570972
+plt.gca().xaxis.get_major_formatter().set_powerlimits((0, 0), )
 plt.plot(xs, ld, 'k', linewidth=2)
 plt.savefig('visibilityplot.pdf', dpi=300, bbox_inches='tight')
 #plt.show()

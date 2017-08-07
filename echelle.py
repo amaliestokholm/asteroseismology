@@ -431,7 +431,7 @@ def echelle(filename, delta_nu, save=None):
         bottom = (start + (nx * row)) * fres
         top = (start + (nx * (row + 1))) * fres
         blur_data = ndimage.gaussian_filter(pixeldata[row:row+1], 75)
-        plt.imshow(blur_data, aspect='auto', cmap='gray',
+        plt.imshow(blur_data, aspect='auto', cmap='Blues',
                    interpolation='gaussian', origin='lower',
                    extent=(-fres/2, dnu-fres/2, bottom, top))
     if save is not None:

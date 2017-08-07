@@ -195,13 +195,14 @@ def make_the_timeseries():
     print('Nyquist frequency: %s µHz' % str(nyquist))
 
     # Plot the time series
+    """
     plt.figure()
-    # fix_margins
     plt.plot(time, flux, 'k.')
     plt.xlabel(r'Relative time [Ms]')
     plt.ylabel(r'Photometry')
     plt.xlim([np.amin(time), np.amax(time)])
     plt.savefig('%s_time.pdf' % (starname), bbox_inches='tight')
+    """
 
     # Save data in textfile
     print('Write %d entries to %s' % (len(time), ts))
