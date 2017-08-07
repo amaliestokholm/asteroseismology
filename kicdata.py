@@ -50,8 +50,7 @@ def getdata(ID, kernelsize, quarter, sigma, noisecut):
     # Activate Seaborn color aliases
     sns.set_palette('colorblind')
     sns.set_color_codes(palette='colorblind')
-    plt.style.use('ggplot')
-    sns.set_context('poster')
+    sns.set_context('paper', font_scale=1.7)
     sns.set_style("ticks")
     
     def fix_margins():
@@ -194,6 +193,6 @@ def getdata(ID, kernelsize, quarter, sigma, noisecut):
     plt.ylim([-np.amax(totaldataflux), np.amax(totaldataflux)])
     # http://stackoverflow.com/a/17846471/1570972
     plt.gca().yaxis.get_major_formatter().set_powerlimits((0, 0), )
-    plt.savefig('rawdata.pdf')
+    plt.savefig('rawdata.pdf', bbox_inches='tight')
 
     return (totaldatatime, totaldataflux)
