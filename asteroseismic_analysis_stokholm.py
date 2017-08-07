@@ -201,7 +201,7 @@ def make_the_timeseries():
     plt.xlabel('Relative time [Ms]')
     plt.ylabel('Photometry')
     plt.xlim([np.amin(time), np.amax(time)])
-    plt.savefig('%s_time.pdf' % (starname))
+    plt.savefig('%s_time.pdf' % (starname), bbox_inches='tight')
 
     # Save data in textfile
     print('Write %d entries to %s' % (len(time), ts))
@@ -246,7 +246,7 @@ def make_the_power_spectrum():
     plt.xlabel('Frequency [$\mu$Hz]')
     plt.ylabel('Power [ppm$^2$]')
     plt.xlim([np.amin(freq), np.amax(freq)])
-    plt.savefig('%s_power_%s_%s.pdf' % (starname, minfreq, maxfreq))
+    plt.savefig('%s_power_%s_%s.pdf' % (starname, minfreq, maxfreq), bbox_inches='tight')
 
     plt.figure()
     # fix_margins
@@ -255,7 +255,7 @@ def make_the_power_spectrum():
     plt.title('The power spectrum of %s' % starname)
     plt.xlabel('Frequency [$\mu$Hz]')
     plt.ylabel('Power [ppm$^2$]')
-    plt.savefig('%s_zoom_ps_%s_%s.pdf' % (starname, minfreq, maxfreq))
+    plt.savefig('%s_zoom_ps_%s_%s.pdf' % (starname, minfreq, maxfreq), bbox_inches='tight')
 
     # Save data in textfile
     print('Write %d entries to %s' % (len(freq), ps))
@@ -291,7 +291,7 @@ def smooth_power_spectrum():
     plt.ylabel('Power [ppm$^2$]')
     plt.xlim([np.amin(freq), np.amax(freq)])
     plt.savefig('%s_smoothenpower_%s_%s.pdf' % (starname, minfreq,
-                maxfreq))
+                maxfreq), bbox_inches='tight')
 
     plt.figure()
     # fix_margins
@@ -301,7 +301,7 @@ def smooth_power_spectrum():
     plt.ylabel('Power [ppm$^2$]')
     plt.xlim([np.amin(freq), 2000])
     plt.savefig('%s_smoothenpower_zoom_%s_%s.pdf' % (starname,
-                                                      minfreq, maxfreq))
+                                                      minfreq, maxfreq), bbox_inches='tight')
     #plt.show()
 
     # Save data in npz file
@@ -337,7 +337,7 @@ def background(nu_max):
     plt.xlabel('Frequency [$\mu$Hz]')
     plt.ylabel('Power density [ppm$^2\,\mu$Hz$^{-1}$]')
     plt.xlim([np.amin(freq), np.amax(freq)])
-    plt.savefig('%s_powerden_%s_%s.pdf' % (starname, minfreq, maxfreq))
+    plt.savefig('%s_powerden_%s_%s.pdf' % (starname, minfreq, maxfreq), bbox_inches='tight')
 
     # Save data in textfile
     #print('Write %d entries to %s' % (len(freq), pds))
@@ -493,7 +493,7 @@ def background(nu_max):
     plt.xlim([np.amin(freq_plot), np.amax(freq_plot)])
     plt.ylim([10 ** (-2), 2 * 10 ** (2)])
     plt.savefig('%s_backgroundfit_%s_%s.pdf' % (starname,
-                minfreq, maxfreq))
+                minfreq, maxfreq), bbox_inches='tight')
 
     # Correct for this simulated background by dividing it out
     corr_powerden = rpowerden / background_fit(rfreq, *popt)
@@ -508,7 +508,7 @@ def background(nu_max):
     plt.ylabel('Power density [ppm$^2\,\mu$Hz$^{-1}$]')
     plt.xlim([np.amin(freq_plot), np.amax(freq_plot)])
     plt.savefig('%s_backgroundcorrected_%s_%s.pdf' % (starname,
-                minfreq, maxfreq))
+                minfreq, maxfreq), bbox_inches='tight')
     #plt.show()
 
     #time, flux = loadnpz(ts).T
@@ -526,7 +526,7 @@ def background(nu_max):
     plt.ylabel('Power [ppm$^2$]')
     plt.xlim([np.amin(freq_plot), 2000])
     plt.savefig('%s_powerspectrum_final_%s_%s.pdf' % (starname,
-                minfreq, maxfreq))
+                minfreq, maxfreq), bbox_inches='tight')
     #plt.show()
 
     # Save data in textfile
@@ -624,7 +624,7 @@ def find_numax():
     plt.xlim([np.amin(freq), 2000])
     plt.ylim([0, 0.75])
     plt.savefig('%s_nm%s_%s_%s.pdf' % (starname, nmsigma, minfreq,
-                maxfreq))
+                maxfreq), bbox_inches='tight')
     #plt.show()
 
     return nu_max
@@ -730,10 +730,10 @@ def find_deltanu_and_nu_max():
     plt.plot(freqcut, gauss(freqcut, *popt), 'b', linewidth=0.1)
     plt.plot(delta_nu, gauss(delta_nu, *popt), 'r.')
     plt.xlim([np.amin(nautocorr), 1000])
-    plt.xlabel(r'Frequency [$\mu$Hz]')
-    plt.ylabel(r'Autocorrelated function')
+    plt.xlabel('Frequency [$\mu$Hz]')
+    plt.ylabel('Autocorrelated function')
     plt.ylim([0, 0.5])
-    plt.savefig(r'dn%s_%s_%s.pdf' % (starname, minfreq, maxfreq))
+    plt.savefig('dn%s_%s_%s.pdf' % (starname, minfreq, maxfreq), bbox_inches='tight')
 
     # Find nu_max using the method found in
     # http://arxiv.org/pdf/0910.2764v1.pdf
@@ -778,7 +778,7 @@ def find_deltanu_and_nu_max():
                origin='lower', aspect='auto',
                extent=[freqlist[0, 0], freqlist[-1, 0], 0, spacinglist[0, -1]])
     plt.savefig(r'%s_numax_huber_2_%s_%s.pdf' % (starname,
-                cutlimit, overlap))
+                cutlimit, overlap), bbox_inches='tight')
 
     # Collapse the ACF
     collacf = np.sum(clist, axis=1)
@@ -806,7 +806,7 @@ def find_deltanu_and_nu_max():
     #pdf = skewnorm.pdf(xs, 1, loc=loc, scale=scale)
     #plt.plot(xs, pdf, 'k')
     plt.savefig(r'%s_numax_huber_3_%s_%s.pdf' % (starname,
-                cutlimit, overlap))
+                cutlimit, overlap), bbox_inches='tight')
     plt.show()
 
     """
@@ -917,7 +917,7 @@ def plot_ps():
     plt.xlabel(r'Frequency [$\mu$Hz]')
     plt.ylabel(r'Power density [ppm$^2\,\mu$Hz$^{-1}$]')
     plt.savefig('zoom_cps%s_%s_%s_min_%smax_%s.png' %
-                (starname, minfreq, maxfreq, minimum, maximum), dpi=300)
+                (starname, minfreq, maxfreq, minimum, maximum), dpi=300, bbox_inches='tight')
     plt.show()
     #print(np.transpose([peak, np.round((peak/delta_nu)-1)]))
 
