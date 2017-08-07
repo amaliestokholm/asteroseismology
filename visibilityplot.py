@@ -35,14 +35,8 @@ def matplotlib_setup():
 # Activate Seaborn color aliases
 sns.set_palette('colorblind')
 sns.set_color_codes(palette='colorblind')
-plt.style.use('ggplot')
-sns.set_context('poster')
+sns.set_context('poster',font_scale=1.7)
 sns.set_style("ticks")
-
-
-def fix_margins():
-    plots.plot_margins()
-    #plt.subplots_adjust(left=0.12, right=0.95, bottom=0.15, top=0.95)
 
 
 def mas2rad(angdia):
@@ -64,7 +58,6 @@ ldcoeff = 0.52
 angdia = 0.458
 
 plt.figure()
-# fix_margins()
 plt.xlabel('Spatial frequency [rad$^{-1}$]')
 plt.ylabel('Visibility$^2$')
 scale = 3
@@ -82,5 +75,5 @@ xs = np.linspace(0, 6 * 10 ** 8, 150)
 plt.xlim([np.min(xs), np.max(xs)])
 ld = limb_darkened_fit(xs, angdia, ldcoeff)
 plt.plot(xs, ld, 'k', linewidth=2)
-plt.savefig('visibilityplot.pdf', dpi=300)
+plt.savefig('visibilityplot.pdf', dpi=300, bbox_inches='tight')
 #plt.show()

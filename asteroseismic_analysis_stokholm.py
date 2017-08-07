@@ -198,8 +198,8 @@ def make_the_timeseries():
     plt.figure()
     # fix_margins
     plt.plot(time, flux, 'k.')
-    plt.xlabel('Relative time [Ms]')
-    plt.ylabel('Photometry')
+    plt.xlabel(r'Relative time [Ms]')
+    plt.ylabel(r'Photometry')
     plt.xlim([np.amin(time), np.amax(time)])
     plt.savefig('%s_time.pdf' % (starname), bbox_inches='tight')
 
@@ -242,9 +242,9 @@ def make_the_power_spectrum():
     plt.figure()
     # fix_margins
     plt.plot(freq, power, 'k', linewidth=0.1)
-    plt.title('The power spectrum of %s' % starname)
-    plt.xlabel('Frequency [$\mu$Hz]')
-    plt.ylabel('Power [ppm$^2$]')
+    plt.title(r'The power spectrum of %s' % starname)
+    plt.xlabel(r'Frequency [$\mu$Hz]')
+    plt.ylabel(r'Power [ppm$^2$]')
     plt.xlim([np.amin(freq), np.amax(freq)])
     plt.savefig('%s_power_%s_%s.pdf' % (starname, minfreq, maxfreq), bbox_inches='tight')
 
@@ -253,8 +253,8 @@ def make_the_power_spectrum():
     plt.plot(freq, power, 'k', linewidth=0.1)
     plt.xlim([np.amin(freq), 5000])
     plt.title('The power spectrum of %s' % starname)
-    plt.xlabel('Frequency [$\mu$Hz]')
-    plt.ylabel('Power [ppm$^2$]')
+    plt.xlabel(r'Frequency [$\mu$Hz]')
+    plt.ylabel(r'Power [ppm$^2$]')
     plt.savefig('%s_zoom_ps_%s_%s.pdf' % (starname, minfreq, maxfreq), bbox_inches='tight')
 
     # Save data in textfile
@@ -287,8 +287,8 @@ def smooth_power_spectrum():
     plt.figure()
     # fix_margins
     plt.plot(freq, smooth_data, 'r-', linewidth=0.1)
-    plt.xlabel('Frequency [$\mu$Hz]')
-    plt.ylabel('Power [ppm$^2$]')
+    plt.xlabel(r'Frequency [$\mu$Hz]')
+    plt.ylabel(r'Power [ppm$^2$]')
     plt.xlim([np.amin(freq), np.amax(freq)])
     plt.savefig('%s_smoothenpower_%s_%s.pdf' % (starname, minfreq,
                 maxfreq), bbox_inches='tight')
@@ -297,8 +297,8 @@ def smooth_power_spectrum():
     # fix_margins
     plt.plot(freq, smooth_data, 'k', linewidth=0.1)
     # plt.title(r'The smoothened power spectrum of %s' % starname)
-    plt.xlabel('Frequency [$\mu$Hz]')
-    plt.ylabel('Power [ppm$^2$]')
+    plt.xlabel(r'Frequency [$\mu$Hz]')
+    plt.ylabel(r'Power [ppm$^2$]')
     plt.xlim([np.amin(freq), 2000])
     plt.savefig('%s_smoothenpower_zoom_%s_%s.pdf' % (starname,
                                                       minfreq, maxfreq), bbox_inches='tight')
@@ -334,8 +334,8 @@ def background(nu_max):
     plt.figure()
     # fix_margins
     plt.plot(freq, powerden, 'k', linewidth=0.5)
-    plt.xlabel('Frequency [$\mu$Hz]')
-    plt.ylabel('Power density [ppm$^2\,\mu$Hz$^{-1}$]')
+    plt.xlabel(r'Frequency [$\mu$Hz]')
+    plt.ylabel(r'Power density [ppm$^2\,\mu$Hz$^{-1}$]')
     plt.xlim([np.amin(freq), np.amax(freq)])
     plt.savefig('%s_powerden_%s_%s.pdf' % (starname, minfreq, maxfreq), bbox_inches='tight')
 
@@ -488,8 +488,8 @@ def background(nu_max):
                basex=10, basey=10)
     plt.loglog(freq_plot, np.ones(len(freq_plot)) * popt[4], 'royalblue', linestyle='--')
     # plt.title(r'The power density spectrum of %s' % starname)
-    plt.xlabel('Frequency [$\mu$Hz]')
-    plt.ylabel('Power density [ppm$^2\, \mu$Hz$^{-1}$]')
+    plt.xlabel(r'Frequency [$\mu$Hz]')
+    plt.ylabel(r'Power density [ppm$^2\, \mu$Hz$^{-1}$]')
     plt.xlim([np.amin(freq_plot), np.amax(freq_plot)])
     plt.ylim([10 ** (-2), 2 * 10 ** (2)])
     plt.savefig('%s_backgroundfit_%s_%s.pdf' % (starname,
@@ -504,8 +504,8 @@ def background(nu_max):
     plt.loglog(freq_plot, powerden_plot, '0.75', basex=10, basey=10, linewidth=0.1)
     plt.loglog(freq_plot, corr_powerden_plot, 'k', basex=10, basey=10, linewidth=0.1)
     # plt.title(r'The corrected power density spectrum of %s' % starname)
-    plt.xlabel('Frequency [$\mu$Hz]')
-    plt.ylabel('Power density [ppm$^2\,\mu$Hz$^{-1}$]')
+    plt.xlabel(r'Frequency [$\mu$Hz]')
+    plt.ylabel(r'Power density [ppm$^2\,\mu$Hz$^{-1}$]')
     plt.xlim([np.amin(freq_plot), np.amax(freq_plot)])
     plt.savefig('%s_backgroundcorrected_%s_%s.pdf' % (starname,
                 minfreq, maxfreq), bbox_inches='tight')
@@ -522,8 +522,8 @@ def background(nu_max):
     # fix_margins()
     plt.plot(freq_plot, corr_power_plot, 'k', linewidth=0.1)
     # plt.title(r'The power spectrum of %s' % starname)
-    plt.xlabel('Frequency [$\mu$Hz]')
-    plt.ylabel('Power [ppm$^2$]')
+    plt.xlabel(r'Frequency [$\mu$Hz]')
+    plt.ylabel(r'Power [ppm$^2$]')
     plt.xlim([np.amin(freq_plot), 2000])
     plt.savefig('%s_powerspectrum_final_%s_%s.pdf' % (starname,
                 minfreq, maxfreq), bbox_inches='tight')
@@ -619,8 +619,8 @@ def find_numax():
     plt.plot(freqcut, gauss(freqcut, * popt), 'b')
     plt.plot(nu_max, gauss(nu_max, * popt), 'ro')
     # plt.title(r'The extremely smoothened power spectrum of %s' % starname)
-    plt.xlabel('Frequency [$\mu$Hz]')
-    plt.ylabel('Power [ppm$^2$]')
+    plt.xlabel(r'Frequency [$\mu$Hz]')
+    plt.ylabel(r'Power [ppm$^2$]')
     plt.xlim([np.amin(freq), 2000])
     plt.ylim([0, 0.75])
     plt.savefig('%s_nm%s_%s_%s.pdf' % (starname, nmsigma, minfreq,
@@ -730,8 +730,8 @@ def find_deltanu_and_nu_max():
     plt.plot(freqcut, gauss(freqcut, *popt), 'b', linewidth=0.1)
     plt.plot(delta_nu, gauss(delta_nu, *popt), 'r.')
     plt.xlim([np.amin(nautocorr), 1000])
-    plt.xlabel('Frequency [$\mu$Hz]')
-    plt.ylabel('Autocorrelated function')
+    plt.xlabel(r'Frequency [$\mu$Hz]')
+    plt.ylabel(r'Autocorrelated function')
     plt.ylim([0, 0.5])
     plt.savefig('dn%s_%s_%s.pdf' % (starname, minfreq, maxfreq), bbox_inches='tight')
 

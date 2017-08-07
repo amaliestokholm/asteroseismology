@@ -3,7 +3,6 @@ import numpy as np
 import scipy
 from scipy import ndimage
 import matplotlib
-#import seaborn as sns
 from collections import namedtuple
 
 
@@ -25,13 +24,16 @@ def matplotlib_setup():
     matplotlib.rc('text.latex',
                   preamble=r'\usepackage[T1]{fontenc}\usepackage{lmodern}')
 
-matplotlib_setup()
 
 import matplotlib.pyplot as plt
+import seaborn as sns
 
+# Activate Seaborn color aliases
+sns.set_palette('colorblind')
+sns.set_color_codes(palette='colorblind')
+sns.set_context('paper', font_scale=1.7)
+sns.set_style("ticks")
 
-def fix_margins():
-    plt.subplots_adjust(left=0.12, right=0.97, bottom=0.17, top=0.93)
 
 ModesBase = namedtuple('Modes', 'l n f inertia error dnu'.split())
 
@@ -370,7 +372,7 @@ def overplot(job, starfile, obsfile, dnu_obs):
                     (job, starname, i, dnu), bbox_inches='tight')
         plt.close()
         plt.figure()
-        fix_margins()
+        # fix_margins()
         plt.xlabel(r'$\nu_{{obs}}$ / $\mu$Hz')
         plt.ylabel(r'$\nu_{obs}-\nu_{{mod}}$ / $\mu$Hz')
         plt.plot(f_obs_l0, (f_obs_l0 - f_mod_l0), color='dodgerblue',
@@ -419,8 +421,7 @@ def echelle(filename, delta_nu, save=None):
         return x, y
 
     h = plt.figure()
-    fix_margins()
-    plt.xlabel(r'Frequency mod $\Delta\nu [$\mu$Hz]' % dnu)
+    plt.xlabel(r'Frequency mod $\Delta\nu$ [$\mu$Hz]' % dnu)
     plt.ylabel(r'Frequency [$\mu$Hz]')
     # Subtract half a pixel in order for data points to show up
     # in the middle of the pixel instead of in the lower left corner.
