@@ -19,16 +19,15 @@ def getdata(ID, kernelsize, quarter, sigma, noisecut):
     import os
     from time import time as now
     import matplotlib
-
-    # matplotlib_setup()
     import matplotlib.pyplot as plt
     import seaborn as sns
+    import poweroften
 
     # Activate Seaborn color aliases
-    sns.set()
     sns.set_palette('colorblind')
     sns.set_color_codes(palette='colorblind')
     sns.set_context('paper', font_scale=1.7)
+    sns.set_style("ticks")
 
     # Find data files in path
     datafiles = sorted([s for s in os.listdir('data/%s/kepler' % ID)
@@ -153,24 +152,19 @@ def getdata(ID, kernelsize, quarter, sigma, noisecut):
     plt.plot(totaldatatime_norect, totaldataflux_norect,
              color='k', marker='.', ms=1, linestyle='None')
     """
-    sns.set_style("ticks", {'font.family': 'sans-serif', 'font.sans-serif': [u'Arial',
-                                                                              u'Liberation Sans',
-                                                                              u'Bitstream Vera Sans',
-                                                                              u'sans-serif']})
     plt.plot(totaldatatime[::10], totaldataflux[::10]
-             # , color='navy', marker='.', ms=5,
-             # linestyle='None',alpha=0.75
+            , color='navy', marker='.', ms=5,
+            linestyle='None',alpha=0.75
             )
     plt.plot(totaltime_noise[::10], totalflux_noise[::10]
-            # , color='slategrey', marker='x', ms=5, linestyle='None', mew=1
+            , color='slategrey', marker='x', ms=5, linestyle='None', mew=1
             )
-    plt.xlabel(r'Relative$ $time [Ms]')
+    plt.xlabel(r'Relative time [Ms]')
     plt.ylabel(r'Relative photometry')
     plt.xlim([np.amin(totaldatatime), np.amax(totaldatatime)])
     plt.ylim([-np.amax(totaldataflux), np.amax(totaldataflux)])
-    # http://stackoverflow.com/a/17846471/1570972
-    plt.gca().yaxis.get_major_formatter().set_powerlimits((0, 0), )
-
+    plt.gca().get_yaxis().set_major_formatter(poweroften.MyScalarFormatter())
+    plt.gca().get_yaxis().get_major_formatter().set_powerlimits([-4, 4])
     plt.savefig('rawdata.pdf', bbox_inches='tight')
 
     return (totaldatatime, totaldataflux)

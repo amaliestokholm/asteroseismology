@@ -89,9 +89,9 @@ from time import time as now
 import itertools
 import matplotlib
 
-
+r"""
 def matplotlib_setup():
-    """ The setup, which makes nice plots for the report"""
+    # The setup, which makes nice plots for the report
     # \showthe\columnwidth
     #fig_width_pt = 240
     #inches_per_pt = 1.0 / 72.27
@@ -111,6 +111,7 @@ def matplotlib_setup():
     matplotlib.rc('text.latex',
                   preamble=r'\usepackage[T1]{fontenc}\usepackage{lmodern}')
 
+"""
 
 import matplotlib.pyplot as plt
 import seaborn as sns
@@ -956,7 +957,6 @@ def echelle(delta_nu, freq, power):
 
 
 if __name__ == "__main__":
-    matplotlib_setup()
     # Here the functions are called
     make_the_timeseries()
     #make_the_power_spectrum()

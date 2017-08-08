@@ -5,7 +5,7 @@ import matplotlib
 import matplotlib.pyplot as plt
 import seaborn as sns
 from collections import namedtuple
-
+import poweroften
 
 def matplotlib_setup():
     # \showthe\columnwidth
@@ -74,8 +74,8 @@ spatialfreq = np.asarray(sorted(spatialfreq))
 xs = np.linspace(0, 6 * 10 ** 8, 150)
 plt.xlim([np.min(xs), np.max(xs)])
 ld = limb_darkened_fit(xs, angdia, ldcoeff)
-# http://stackoverflow.com/a/17846471/1570972
-plt.gca().xaxis.get_major_formatter().set_powerlimits((0, 0), )
 plt.plot(xs, ld, 'k', linewidth=2)
+plt.gca().get_xaxis().set_major_formatter(poweroften.MyScalarFormatter())
+plt.gca().get_xaxis().get_major_formatter().set_powerlimits([-4, 4])
 plt.savefig('visibilityplot.pdf', dpi=300, bbox_inches='tight')
 #plt.show()
